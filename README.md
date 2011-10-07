@@ -7,6 +7,12 @@ This library is distributed under the LGPL.
 See: https://raw.github.com/RIPE-NCC/hadoop-pcap/master/LICENSE
 
 
+Download
+--------
+
+* 0.1: https://s3-eu-west-1.amazonaws.com/hadoop-pcap/hadoop-pcap-serde-0.1-jar-with-dependencies.jar (Released 07/10/2011)
+
+
 Usage
 -----
 
