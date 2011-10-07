@@ -10,7 +10,14 @@ See: https://raw.github.com/RIPE-NCC/hadoop-pcap/master/LICENSE
 Download
 --------
 
-* 0.1: https://s3-eu-west-1.amazonaws.com/hadoop-pcap/hadoop-pcap-serde-0.1-jar-with-dependencies.jar (Released 07/10/2011)
+* 0.1: https://s3-eu-west-1.amazonaws.com/hadoop-pcap/hadoop-pcap-serde-0.1-jar-with-dependencies.jar (Release date: 07/10/2011)
+
+
+Screencast
+----------
+
+We have created a screencast showing the use of the Hadoop PCAP SerDe in Hive using [Amazon Elastic MapReduce](http://aws.amazon.com/elasticmapreduce/).
+You can find the video on YouTube: http://www.youtube.com/watch?v=Wqm79ML-xQs
 
 
 Usage
