@@ -13,7 +13,7 @@ Download
 ### Version 0.1
 
 Release date: 07/10/2011  
-Download link: https://s3-eu-west-1.amazonaws.com/hadoop-pcap/hadoop-pcap-serde-0.1-jar-with-dependencies.jar  
+Download link: https://github.com/downloads/RIPE-NCC/hadoop-pcap/hadoop-pcap-serde-0.1-jar-with-dependencies.jar  
 MD5 sum: 2729bbfa4df3cd617aba4aa034e96fd0  
 SHA1 sum: 763e98a6a0878ffbb79961fbea6979e27064caef
 
