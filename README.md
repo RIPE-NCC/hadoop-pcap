@@ -32,10 +32,10 @@ This project consists of two components:
 
 ### Library
 
-Bundles the code used to read PCAPs. Can be used within MapReduce jobs to natively read PCAP files.
+Bundles the code used to read PCAPs. Can be used within MapReduce jobs to natively read PCAP files.  
 See: https://github.com/RIPE-NCC/hadoop-pcap/tree/master/hadoop-pcap-lib
 
 ### SerDe
 
-Implements a Hive Serializer/Deserializer (SerDe) to query PCAPs using SQL like commands.
+Implements a Hive Serializer/Deserializer (SerDe) to query PCAPs using SQL like commands.  
 See: https://github.com/RIPE-NCC/hadoop-pcap/tree/master/hadoop-pcap-serde
