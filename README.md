@@ -22,7 +22,7 @@ Screencast
 ----------
 
 We have created a screencast showing the use of the Hadoop PCAP SerDe in Hive using [Amazon Elastic MapReduce](http://aws.amazon.com/elasticmapreduce/).  
-You can find the video on YouTube: http://www.youtube.com/watch?v=Wqm79ML-xQs
+You can find the video on YouTube: http://www.youtube.com/watch?v=FLxeQciax-Q
 
 
 Components
