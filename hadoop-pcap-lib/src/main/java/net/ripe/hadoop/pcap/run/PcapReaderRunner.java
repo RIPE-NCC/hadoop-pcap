@@ -1,6 +1,6 @@
 package net.ripe.hadoop.pcap.run;
 
-import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public class PcapReaderRunner {
 			is = new FileInputStream(path);
 			if (path.endsWith(".gz") || path.endsWith(".gzip"))
 				is = new GZIPInputStream(is);
-			is = new BufferedInputStream(is);
+			is = new DataInputStream(is);
 
 			PcapReader reader = initPcapReader(pcapReaderClass, is);
 	

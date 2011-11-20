@@ -1,7 +1,8 @@
 package net.ripe.hadoop.pcap;
 
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
@@ -33,10 +34,10 @@ public class PcapReader implements Iterable<Packet> {
 	public static final String PROTOCOL_TCP = "TCP";
 	public static final String PROTOCOL_UDP = "UDP";
 
-	private final InputStream is;
+	private final DataInputStream is;
 	private Iterator<Packet> iterator;
 
-	public PcapReader(InputStream is) throws IOException {
+	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
 		iterator = new PacketIterator();
 
@@ -161,12 +162,15 @@ public class PcapReader implements Iterable<Packet> {
 
 	protected boolean readBytes(byte[] buf) {
 		try {
-			if (is.read(buf) != -1)
-				return true;
+			is.readFully(buf);
+			return true;
+		} catch (EOFException e) {
+			// Reached the end of the stream
+			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
-		return false;
 	}
 
 	@Override

@@ -1,7 +1,7 @@
 package net.ripe.hadoop.pcap;
 
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +18,7 @@ import org.xbill.DNS.Section;
 public class DnsPcapReader extends PcapReader {
 	public static final int DNS_PORT = 53;
 
-	public DnsPcapReader(InputStream is) throws IOException {
+	public DnsPcapReader(DataInputStream is) throws IOException {
 		super(is);
 	}
 

@@ -1,8 +1,7 @@
 package net.ripe.hadoop.pcap.io;
 
-import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import net.ripe.hadoop.pcap.PcapReader;
 import net.ripe.hadoop.pcap.io.reader.PcapRecordReader;
@@ -37,14 +36,11 @@ public class PcapInputFormat extends FileInputFormat<LongWritable, ObjectWritabl
 		FileSystem fs = filePath.getFileSystem(config);
         FSDataInputStream baseStream = fs.open(filePath);
 
-        InputStream is = baseStream;
+        DataInputStream is = baseStream;
 		CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(config);
         final CompressionCodec codec = compressionCodecs.getCodec(filePath);
         if (codec != null)
-        	is = codec.createInputStream(is);
-
-        if (!(is instanceof BufferedInputStream))
-        	is = new BufferedInputStream(is);
+        	is = new DataInputStream(codec.createInputStream(is));
 
         PcapReader pcapReader = initPcapReader(is);
 		return new PcapRecordReader(pcapReader, fileSplit, baseStream, is, reporter);
@@ -61,7 +57,7 @@ public class PcapInputFormat extends FileInputFormat<LongWritable, ObjectWritabl
 		return false;
 	}
 
-	protected PcapReader initPcapReader(InputStream is) throws IOException {
+	protected PcapReader initPcapReader(DataInputStream is) throws IOException {
 		return new PcapReader(is);
 	}
 }

@@ -2,8 +2,8 @@ package net.ripe.hadoop.pcap;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import net.ripe.hadoop.pcap.DnsPcapReader;
 
@@ -28,7 +28,7 @@ public class DnsPcapReaderTest {
 
 	private class TestableDnsPcapReader extends DnsPcapReader {
 		public TestableDnsPcapReader() throws IOException {
-			super(new InputStream() {
+			super(new DataInputStream(null) {
 				@Override
 				public int read() throws IOException {
 					return -1; // Return dummy data for test
