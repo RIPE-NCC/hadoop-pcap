@@ -29,4 +29,75 @@ public class PcapReaderTest {
 		byte[] payload = reader.readPayload(new byte[1], 2);
 		assertTrue(0 == payload.length);
 	}
+
+	@Test
+	public void getLinkTypeNULL() {
+		assertEquals(PcapReader.LinkType.NULL, reader.getLinkType(0));
+	}
+
+	@Test
+	public void getLinkTypeEN10MB() {
+		assertEquals(PcapReader.LinkType.EN10MB, reader.getLinkType(1));
+	}
+
+	@Test
+	public void getLinkTypeRAW() {
+		assertEquals(PcapReader.LinkType.RAW, reader.getLinkType(101));
+	}
+
+	@Test
+	public void getLinkTypeLOOP() {
+		assertEquals(PcapReader.LinkType.LOOP, reader.getLinkType(108));
+	}
+
+	@Test
+	public void findIPStartNULL() {
+		assertEquals(0, reader.findIPStart(PcapReader.LinkType.NULL, null));
+	}
+
+	@Test
+	public void findIPStartEN10MB_8021Q() {
+		byte[] packet = new byte[20];
+
+		byte[] ethernetType8021Q = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_8021Q);
+		packet[12] = ethernetType8021Q[0];
+		packet[13] = ethernetType8021Q[1];
+
+		byte[] ethernetTypeIp = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_IP);
+		packet[16] = ethernetTypeIp[0];
+		packet[17] = ethernetTypeIp[1];
+
+		assertEquals(18, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+	}
+
+	@Test
+	public void findIPStartEN10MB() {
+		byte[] packet = new byte[20];
+
+		byte[] ethernetType = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_IP);
+		packet[12] = ethernetType[0];
+		packet[13] = ethernetType[1];
+
+		assertEquals(14, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+	}
+
+	@Test
+	public void findIPStartEN10MBUnknownType() {
+		byte[] packet = new byte[20];
+
+		packet[12] = -1;
+		packet[13] = -1;
+
+		assertEquals(-1, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+	}
+
+	@Test
+	public void findIPStartRAW() {
+		assertEquals(0, reader.findIPStart(PcapReader.LinkType.RAW, null));
+	}
+
+	@Test
+	public void findIPStartLOOP() {
+		assertEquals(4, reader.findIPStart(PcapReader.LinkType.LOOP, null));
+	}
 }

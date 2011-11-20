@@ -30,6 +30,13 @@ public class PcapReaderUtil {
 		return ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
 	}
 
+	public static byte[] convertShort(int data) {
+		byte[] result = new byte[2];
+		result[0] = (byte)(data >> 8);
+		result[1] = (byte)(data);
+		return result;
+	}
+
 	public static int convertShort(byte[] data, int offset) {
 		byte[] target = new byte[2];
 		System.arraycopy(data, offset, target, 0, target.length);
