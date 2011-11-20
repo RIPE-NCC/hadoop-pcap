@@ -15,17 +15,19 @@ public class PcapReader implements Iterable<Packet> {
 
 	public static final long MAGIC_NUMBER = 0xA1B2C3D4;
 	public static final int HEADER_SIZE = 24;
+	public static final int PCAP_HEADER_LINKTYPE_OFFSET = 20;
 	public static final int PACKET_HEADER_SIZE = 16;
 	public static final int TIMESTAMP_OFFSET = 0;
 	public static final int CAP_LEN_OFFSET = 8;
 	public static final int ETHERNET_HEADER_SIZE = 14;
 	public static final int ETHERNET_TYPE_OFFSET = 12;
 	public static final int ETHERNET_TYPE_IP = 0x800;
-	public static final int IP_HEADER_SIZE = 14;
-	public static final int IP_TTL_OFFSET = 22;
-	public static final int IP_PROTOCOL_OFFSET = 23;
-	public static final int IP_SRC_OFFSET = 26;
-	public static final int IP_DST_OFFSET = 30;
+	public static final int ETHERNET_TYPE_8021Q = 0x8100;
+	public static final int IP_VHL_OFFSET = 0;	// relative to start of IP header
+	public static final int IP_TTL_OFFSET = 8;	// relative to start of IP header
+	public static final int IP_PROTOCOL_OFFSET = 9;	// relative to start of IP header
+	public static final int IP_SRC_OFFSET = 12;	// relative to start of IP header
+	public static final int IP_DST_OFFSET = 16;	// relative to start of IP header
 	public static final int UDP_HEADER_SIZE = 8;
 	public static final int PROTOCOL_HEADER_SRC_PORT_OFFSET = 0;
 	public static final int PROTOCOL_HEADER_DST_PORT_OFFSET = 2;
@@ -36,6 +38,7 @@ public class PcapReader implements Iterable<Packet> {
 
 	private final DataInputStream is;
 	private Iterator<Packet> iterator;
+	private long linkType;
 
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
@@ -47,6 +50,17 @@ public class PcapReader implements Iterable<Packet> {
 
 		if (!validateMagicNumber(pcapHeader))
 			throw new IOException("Not a PCAP file (Couldn't find magic number)");
+
+		linkType = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET);
+		switch ((int)linkType) {
+		case 0: 	// LINKTYPE_NULL
+		case 1: 	// LINKTYPE_EN10MB
+		case 101:	// LINKTYPE_RAW
+		case 108:	// LINKTYPE_LOOP
+			break;
+		default:
+			throw new IOException("Unsupported data link type " + linkType);
+		}
 	}
 
 	// Only use this constructor for testcases
@@ -56,31 +70,37 @@ public class PcapReader implements Iterable<Packet> {
 
 	private Packet nextPacket() {
 		byte[] pcapPacketHeader = new byte[PACKET_HEADER_SIZE];
-		if (readBytes(pcapPacketHeader)) {
-			Packet packet = createPacket();
+		if (!readBytes(pcapPacketHeader))
+			return null;
 
-			long packetTimestamp = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_OFFSET);
-			packet.put(Packet.TIMESTAMP, packetTimestamp);
+		Packet packet = createPacket();
 
-			long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET);
-			byte[] packetData = new byte[(int)packetSize];
-			if (readBytes(packetData)) {
-				if (isInternetProtocolPacket(packetData)) {
-					buildInternetProtocolPacket(packet, packetData);
+		long packetTimestamp = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_OFFSET);
+		packet.put(Packet.TIMESTAMP, packetTimestamp);
 
-					final String protocol = (String)packet.get(Packet.PROTOCOL);
-					if (PROTOCOL_UDP == protocol || 
-					    PROTOCOL_TCP == protocol) {
-
-						byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData);
-						processPacketPayload(packet, packetPayload);
-					}
-				}
-			}
-
+		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET);
+		byte[] packetData = new byte[(int)packetSize];
+		if (!readBytes(packetData))
 			return packet;
+
+		int ipStart = findIPStart(packetData);
+		if (ipStart < 0)
+			return packet;
+
+		if (getInternetProtocolHeaderVersion(packetData, ipStart) != 4)
+			return packet;
+
+		buildInternetProtocolV4Packet(packet, packetData, ipStart);
+
+		final String protocol = (String)packet.get(Packet.PROTOCOL);
+		if (PROTOCOL_UDP == protocol || 
+		    PROTOCOL_TCP == protocol) {
+
+			byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData, ipStart);
+			processPacketPayload(packet, packetPayload);
 		}
-		return null;
+
+		return packet;
 	}
 
 	protected Packet createPacket() {
@@ -93,51 +113,84 @@ public class PcapReader implements Iterable<Packet> {
 		return PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER;
 	}
 
-	private boolean isInternetProtocolPacket(byte[] packet) {
-		int etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET);
-		return etherType == ETHERNET_TYPE_IP;
+	private int findIPStart(byte[] packet) {
+		int start = 0;
+		switch ((int)linkType) {
+		case 0: 	// LINKTYPE_NULL
+			break;
+		case 1: 	// LINKTYPE_EN10MB
+			start += ETHERNET_HEADER_SIZE;
+			int etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET);
+			if (etherType == ETHERNET_TYPE_8021Q) {
+				etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET+4);
+				start += 4;
+			}
+			if (etherType != ETHERNET_TYPE_IP) {
+				return -1;
+			}
+			break;
+		case 101:	// LINKTYPE_RAW
+			break;
+		case 108:	// LINKTYPE_LOOP
+			start += 4;
+			break;
+		default:
+			start = -1;
+			break;
+		}
+		return start;
 	}
 
-	private int getInternetProtocolHeaderLength(byte[] packet) {
-		return (packet[IP_HEADER_SIZE] & 0xF) * 4;
+	private int getInternetProtocolHeaderLength(byte[] packet, int ipStart) {
+		return (packet[ipStart + IP_VHL_OFFSET] & 0xF) * 4;
 	}
 
-	private int getTcpHeaderLength(byte[] packet) {
-		int dataOffset = ETHERNET_HEADER_SIZE + getInternetProtocolHeaderLength(packet) + TCP_HEADER_DATA_OFFSET;
+	private int getInternetProtocolHeaderVersion(byte[] packet, int ipStart) {
+		return (packet[ipStart + IP_VHL_OFFSET] >> 4) & 0xF;
+	}
+
+	private int getTcpHeaderLength(byte[] packet, int tcpStart) {
+		int dataOffset = tcpStart + TCP_HEADER_DATA_OFFSET;
 		return ((packet[dataOffset] >> 4) & 0xF) * 4;
 	}
 
-	private void buildInternetProtocolPacket(Packet packet, byte[] packetData) {
-		int ttl = packetData[IP_TTL_OFFSET] & 0xFF;
+	private void buildInternetProtocolV4Packet(Packet packet, byte[] packetData, int ipStart) {
+		int ttl = packetData[ipStart + IP_TTL_OFFSET] & 0xFF;
 		packet.put(Packet.TTL, ttl);
 
-		int protocol = packetData[IP_PROTOCOL_OFFSET];
+		int protocol = packetData[ipStart + IP_PROTOCOL_OFFSET];
 		packet.put(Packet.PROTOCOL, PcapReaderUtil.convertProtocolIdentifier(protocol));
 
-		String src = PcapReaderUtil.convertAddress(packetData, IP_SRC_OFFSET);
+		String src = PcapReaderUtil.convertAddress(packetData, ipStart + IP_SRC_OFFSET);
 		packet.put(Packet.SRC, src);
 
-		String dst = PcapReaderUtil.convertAddress(packetData, IP_DST_OFFSET);
+		String dst = PcapReaderUtil.convertAddress(packetData, ipStart + IP_DST_OFFSET);
 		packet.put(Packet.DST, dst);
 	}
 
-	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData) {
-		int srcPortOffset = ETHERNET_HEADER_SIZE + getInternetProtocolHeaderLength(packetData) + PROTOCOL_HEADER_SRC_PORT_OFFSET;
-		packet.put(Packet.SRC_PORT, PcapReaderUtil.convertShort(packetData, srcPortOffset));
+	/*
+	 * packetData is the entire layer 2 packet read from pcap
+	 * ipStart is the start of the IP packet in packetData
+	 */
+	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipStart) {
+		int ipHdrLen = getInternetProtocolHeaderLength(packetData, ipStart);
 
-		int dstPortOffset = ETHERNET_HEADER_SIZE + getInternetProtocolHeaderLength(packetData) + PROTOCOL_HEADER_DST_PORT_OFFSET;
-		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData, dstPortOffset));
+		packet.put(Packet.SRC_PORT, PcapReaderUtil.convertShort(packetData,
+			ipStart + ipHdrLen + PROTOCOL_HEADER_SRC_PORT_OFFSET));
+
+		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData,
+			ipStart + ipHdrLen + PROTOCOL_HEADER_DST_PORT_OFFSET));
 
 		int headerSize;
 		final String protocol = (String)packet.get(Packet.PROTOCOL);
 		if (PROTOCOL_UDP.equals(protocol))
 			headerSize = UDP_HEADER_SIZE;
 		else if (PROTOCOL_TCP.equals(protocol))
-			headerSize = getTcpHeaderLength(packetData);
+			headerSize = getTcpHeaderLength(packetData, ipStart + ipHdrLen);
 		else
 			return null;
 
-		int payloadDataStart = ETHERNET_HEADER_SIZE + getInternetProtocolHeaderLength(packetData) + headerSize;
+		int payloadDataStart = ipStart + ipHdrLen + headerSize;
 		byte[] data = readPayload(packetData, payloadDataStart);
 		packet.put(Packet.LEN, data.length);
 		return data;
