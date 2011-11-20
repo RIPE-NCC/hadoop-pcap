@@ -54,7 +54,7 @@ public class PcapReaderRunner {
 		try {
 			@SuppressWarnings("unchecked")
 			Class<PcapReader> pcapReaderClass = (Class<PcapReader>)Class.forName(className);
-			Constructor<PcapReader> pcapReaderConstructor = pcapReaderClass.getConstructor(InputStream.class);
+			Constructor<PcapReader> pcapReaderConstructor = pcapReaderClass.getConstructor(DataInputStream.class);
 			return pcapReaderConstructor.newInstance(is);
 		} catch (Exception e) {
 			e.printStackTrace();
