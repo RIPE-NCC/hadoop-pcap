@@ -16,7 +16,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
@@ -54,10 +53,9 @@ public class PcapRecordReaderTest {
 	@Before
 	public void startup() throws IOException {
 		JobConf config = new JobConf();
-		FileSplit split = new FileSplit(null, 0L, TEST_FILE.length(), config);
 		FileSystem fs = FileSystem.get(config);
 		FSDataInputStream is = fs.open(new Path(TEST_FILE.getParent(), TEST_FILE.getName()));
-		recordReader = new PcapRecordReader(new PcapReader(is), split, is, is, new TestableReporter());
+		recordReader = new PcapRecordReader(new PcapReader(is), 0L, TEST_FILE.length(), is, is, new TestableReporter());
 	}
 
 	@After

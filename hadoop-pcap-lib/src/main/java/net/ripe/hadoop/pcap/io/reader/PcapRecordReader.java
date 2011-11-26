@@ -1,38 +1,35 @@
 package net.ripe.hadoop.pcap.io.reader;
 
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 
 import net.ripe.hadoop.pcap.PcapReader;
 import net.ripe.hadoop.pcap.packet.Packet;
 
-import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.Seekable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
-@SuppressWarnings("deprecation")
 public class PcapRecordReader implements RecordReader<LongWritable, ObjectWritable> {
 	PcapReader pcapReader;
 	Iterator<Packet> pcapReaderIterator;
-	FSDataInputStream baseStram;
-	InputStream stream;
+	Seekable baseStream;
+	DataInputStream stream;
 	Reporter reporter;
 
 	long packetCount = 0;
 	long start, end;
 
-	public PcapRecordReader(PcapReader pcapReader, FileSplit fileSplit, FSDataInputStream baseStream, InputStream stream, Reporter reporter) throws IOException {
+	public PcapRecordReader(PcapReader pcapReader, long start, long end, Seekable baseStream, DataInputStream stream, Reporter reporter) throws IOException {
 		this.pcapReader = pcapReader;
-		this.baseStram = baseStream;
+		this.baseStream = baseStream;
 		this.stream = stream;
+		this.start = start;
+		this.end = end;
 		this.reporter = reporter;
-
-		start = fileSplit.getStart();
-		end = start + fileSplit.getLength();
 
 		pcapReaderIterator = pcapReader.iterator();
 	}
@@ -68,7 +65,7 @@ public class PcapRecordReader implements RecordReader<LongWritable, ObjectWritab
 
 	@Override
 	public long getPos() throws IOException {
-		return baseStram.getPos();
+		return baseStream.getPos();
 	}
 
 	@Override

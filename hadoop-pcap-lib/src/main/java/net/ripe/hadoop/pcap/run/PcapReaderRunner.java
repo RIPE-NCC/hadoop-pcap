@@ -35,9 +35,8 @@ public class PcapReaderRunner {
 			is = new FileInputStream(path);
 			if (path.endsWith(".gz") || path.endsWith(".gzip"))
 				is = new GZIPInputStream(is);
-			is = new DataInputStream(is);
 
-			PcapReader reader = initPcapReader(pcapReaderClass, is);
+			PcapReader reader = initPcapReader(pcapReaderClass, new DataInputStream(is));
 	
 			for (Packet packet : reader) {
 				System.out.println("--- packet ---");
@@ -50,11 +49,11 @@ public class PcapReaderRunner {
 		}
 	}
 
-	private PcapReader initPcapReader(String className, InputStream is) {
+	private PcapReader initPcapReader(String className, DataInputStream is) {
 		try {
 			@SuppressWarnings("unchecked")
-			Class<PcapReader> pcapReaderClass = (Class<PcapReader>)Class.forName(className);
-			Constructor<PcapReader> pcapReaderConstructor = pcapReaderClass.getConstructor(DataInputStream.class);
+			Class<? extends PcapReader> pcapReaderClass = (Class<? extends PcapReader>)Class.forName(className);
+			Constructor<? extends PcapReader> pcapReaderConstructor = pcapReaderClass.getConstructor(DataInputStream.class);
 			return pcapReaderConstructor.newInstance(is);
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -13,7 +13,14 @@ Usage
 	ADD JAR hadoop-pcap-serde-0.1-jar-with-dependencies.jar;
 
 
+You can use the following parameters to combine multiple input files into splits of 100MB in size:
+
+	SET hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
+	SET mapred.max.split.size=104857600;
+
 ### DNS table on HDFS
+
+	SET net.ripe.hadoop.pcap.io.reader.class=net.ripe.hadoop.pcap.DnsPcapReader;
 
 	CREATE EXTERNAL TABLE pcaps (ts bigint,
 	                             protocol string,
@@ -32,7 +39,7 @@ Usage
 	                             dns_authority array<string>,
 	                             dns_additional array<string>)
 	ROW FORMAT SERDE 'net.ripe.hadoop.pcap.serde.PcapDeserializer'
-	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.io.DnsPcapInputFormat'
+	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.io.PcapInputFormat'
 	          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 	LOCATION 'hdfs:///pcaps/';
 

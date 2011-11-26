@@ -1,3 +1,8 @@
+Configure reader
+----------------
+You can adjust the reader used to decode the packet by adjusting the property ``net.ripe.hadoop.pcap.io.reader.class``.
+The default value for this property is the class ``net.ripe.hadoop.pcap.PcapReader``.
+
 Usage
 -----
 
@@ -11,10 +16,13 @@ Usage
 			conf.setOutputKeyClass(IntWritable.class);
 			conf.setOutputValueClass(LongWritable.class);
 	
-			conf.setInputFormat(PcapInputFormat.class);
+			conf.setInputFormat(CombinePcapInputFormat.class);
 	
 			conf.setMapperClass(PcapMapper.class);
 			conf.setReducerClass(PcapReducer.class);
+
+			// Combine input files into splits of 100MB in size
+			conf.setLong("mapred.max.split.size", 104857600);
 	
 			FileInputFormat.addInputPath(conf, new Path("input"));
 			FileOutputFormat.setOutputPath(conf, new Path("output"));
