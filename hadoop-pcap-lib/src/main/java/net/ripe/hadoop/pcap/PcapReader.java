@@ -35,18 +35,31 @@ public class PcapReader implements Iterable<Packet> {
 	public static final String PROTOCOL_ICMP = "ICMP";
 	public static final String PROTOCOL_TCP = "TCP";
 	public static final String PROTOCOL_UDP = "UDP";
+	public static final boolean debug = false;
 
 	private final DataInputStream is;
 	private Iterator<Packet> iterator;
 	private LinkType linkType;
+	private boolean caughtEOF = false;
+	private int nPktsRead = 0;
 
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
 		iterator = new PacketIterator();
 
 		byte[] pcapHeader = new byte[HEADER_SIZE];
-		if (!readBytes(pcapHeader))
+		if (!readBytes(pcapHeader)) {
+			//
+			// This special check for EOF is because we don't want
+			// PcapReader to barf on an empty file.  This is the only
+			// place we check caughtEOF.
+			//
+			if (caughtEOF) {
+				System.out.println("skipping empty file");
+				return;
+			}
 			throw new IOException("Couldn't read PCAP header");
+		}
 
 		if (!validateMagicNumber(pcapHeader))
 			throw new IOException("Not a PCAP file (Couldn't find magic number)");
@@ -54,6 +67,8 @@ public class PcapReader implements Iterable<Packet> {
 		long linkTypeVal = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET);
 		if ((linkType = getLinkType(linkTypeVal)) == null)
 			throw new IOException("Unsupported link type: " + linkTypeVal);
+		if (debug)
+			System.out.println("linktype = " + linkTypeVal);
 	}
 
 	// Only use this constructor for testcases
@@ -76,7 +91,7 @@ public class PcapReader implements Iterable<Packet> {
 		if (!readBytes(packetData))
 			return packet;
 
-		int ipStart = findIPStart(linkType, packetData);
+		int ipStart = findIPStart(packetData);
 		if (ipStart == -1)
 			return packet;
 
@@ -92,6 +107,7 @@ public class PcapReader implements Iterable<Packet> {
 			}
 		}
 
+		nPktsRead++;
 		return packet;
 	}
 
@@ -123,7 +139,7 @@ public class PcapReader implements Iterable<Packet> {
 		return null;
 	}
 
-	protected int findIPStart(LinkType linkType, byte[] packet) {
+	protected int findIPStart(byte[] packet) {
 		switch (linkType) {
 			case NULL:
 				return 0;
@@ -221,6 +237,7 @@ public class PcapReader implements Iterable<Packet> {
 			return true;
 		} catch (EOFException e) {
 			// Reached the end of the stream
+			caughtEOF = true;
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -246,6 +263,8 @@ public class PcapReader implements Iterable<Packet> {
 			fetchNext();
 			if (next != null)
 				return true;
+			if (debug)
+				System.out.println ("hasNext() returns false after " + nPktsRead + " packets");
 			return false;
 		}
 
