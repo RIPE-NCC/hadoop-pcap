@@ -3,6 +3,17 @@ Configure reader
 You can adjust the reader used to decode the packet by adjusting the property ``net.ripe.hadoop.pcap.io.reader.class``.
 The default value for this property is the class ``net.ripe.hadoop.pcap.PcapReader``.
 
+Write a reader for other protocols
+----------------------------------
+You might want to decode packets that carry other protocols. Currently this library has readers for plain IP packets and packets carrying DNS payloads.
+
+As mentioned in the section ``Configure reader`` above you can configure which reader class you would like to use by simply changing the value of a property.
+
+The class ``net.ripe.hadoop.pcap.DnsPcapReader`` is an example that shows how to write such a reader.
+You need to override two methods and define a packet format by creating your own implementation like ``net.ripe.hadoop.pcap.packet.DnsPacket`` does.
+
+We would be happy to include your reader implementations in this library if you develop them. Send us a pull request on GitHub.
+
 Usage
 -----
 
