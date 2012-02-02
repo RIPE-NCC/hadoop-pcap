@@ -72,8 +72,9 @@ public class PcapReader implements Iterable<Packet> {
 	}
 
 	// Only use this constructor for testcases
-	protected PcapReader() {
+	protected PcapReader(LinkType lt) {
 		this.is = null;
+		linkType = lt;
 	}
 
 	private Packet nextPacket() {
