@@ -39,14 +39,26 @@ public class PcapReader implements Iterable<Packet> {
 	private final DataInputStream is;
 	private Iterator<Packet> iterator;
 	private LinkType linkType;
+	private boolean caughtEOF = false;
+	private int nPktsRead = 0;
 
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
 		iterator = new PacketIterator();
 
 		byte[] pcapHeader = new byte[HEADER_SIZE];
-		if (!readBytes(pcapHeader))
+		if (!readBytes(pcapHeader)) {
+			//
+			// This special check for EOF is because we don't want
+			// PcapReader to barf on an empty file.  This is the only
+			// place we check caughtEOF.
+			//
+			if (caughtEOF) {
+				System.out.println("skipping empty file");
+				return;
+			}
 			throw new IOException("Couldn't read PCAP header");
+		}
 
 		if (!validateMagicNumber(pcapHeader))
 			throw new IOException("Not a PCAP file (Couldn't find magic number)");
@@ -57,8 +69,41 @@ public class PcapReader implements Iterable<Packet> {
 	}
 
 	// Only use this constructor for testcases
-	protected PcapReader() {
+	protected PcapReader(LinkType lt) {
 		this.is = null;
+		linkType = lt;
+	}
+
+	private int getUdpChecksum(byte[] packetData, int ipStart, int ipHeaderLen) {
+		/*
+		 * No Checksum on this packet?
+		 */
+		if (packetData[ipStart + ipHeaderLen + 6] == 0 &&
+		    packetData[ipStart + ipHeaderLen + 7] == 0)
+			return -1;
+
+		/*
+		 * Build data[] that we can checksum.  Its a pseudo-header
+		 * followed by the entire UDP packet.
+		 */
+		byte data[] = new byte[packetData.length - ipStart - ipHeaderLen + 12];
+    		short answer;
+		int sum = 0;
+		System.arraycopy(packetData, ipStart + IP_SRC_OFFSET,      data, 0, 4);
+		System.arraycopy(packetData, ipStart + IP_DST_OFFSET,      data, 4, 4);
+		data[8] = 0;
+		data[9] = 17;	/* IPPROTO_UDP */
+		System.arraycopy(packetData, ipStart + ipHeaderLen + 4,    data, 10, 2);
+		System.arraycopy(packetData, ipStart + ipHeaderLen,        data, 12, packetData.length - ipStart - ipHeaderLen);
+		for (int i = 0; i<data.length; i++) {
+			int j = data[i];
+			if (j < 0)
+				j += 256;
+			sum += j << (i % 2 == 0 ? 8 : 0);
+		}
+		sum = (sum >> 16) + (sum & 0xffff);
+		sum += (sum >> 16);
+		return (~sum) & 0xffff;
 	}
 
 	private Packet nextPacket() {
@@ -76,7 +121,7 @@ public class PcapReader implements Iterable<Packet> {
 		if (!readBytes(packetData))
 			return packet;
 
-		int ipStart = findIPStart(linkType, packetData);
+		int ipStart = findIPStart(packetData);
 		if (ipStart == -1)
 			return packet;
 
@@ -92,6 +137,7 @@ public class PcapReader implements Iterable<Packet> {
 			}
 		}
 
+		nPktsRead++;
 		return packet;
 	}
 
@@ -123,7 +169,7 @@ public class PcapReader implements Iterable<Packet> {
 		return null;
 	}
 
-	protected int findIPStart(LinkType linkType, byte[] packet) {
+	protected int findIPStart(byte[] packet) {
 		switch (linkType) {
 			case NULL:
 				return 0;
@@ -185,9 +231,12 @@ public class PcapReader implements Iterable<Packet> {
 
 		int headerSize;
 		final String protocol = (String)packet.get(Packet.PROTOCOL);
-		if (PROTOCOL_UDP.equals(protocol))
+		if (PROTOCOL_UDP.equals(protocol)) {
 			headerSize = UDP_HEADER_SIZE;
-		else if (PROTOCOL_TCP.equals(protocol))
+			int cksum = getUdpChecksum(packetData, ipStart, ipHeaderLen);
+			if (cksum >= 0)
+				packet.put(Packet.UDPSUM, cksum);
+		} else if (PROTOCOL_TCP.equals(protocol))
 			headerSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
 		else
 			return null;
@@ -207,7 +256,7 @@ public class PcapReader implements Iterable<Packet> {
 	 */
 	protected byte[] readPayload(byte[] packetData, int payloadDataStart) {
 		if (payloadDataStart > packetData.length) {
-			LOG.warn("Payload start is larger than packet data. Returning empty payload.");
+			LOG.warn("Payload start (" + payloadDataStart + ") is larger than packet data (" + packetData.length + "). Returning empty payload.");
 			return new byte[0];
 		}
 		byte[] data = new byte[packetData.length - payloadDataStart];
@@ -221,6 +270,7 @@ public class PcapReader implements Iterable<Packet> {
 			return true;
 		} catch (EOFException e) {
 			// Reached the end of the stream
+			caughtEOF = true;
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();

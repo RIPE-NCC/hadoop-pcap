@@ -15,7 +15,7 @@ public class PcapReaderTest {
 
 	@Before
 	public void init() throws IOException {
-		reader = new PcapReader();
+		reader = new PcapReader(PcapReader.LinkType.NULL);
 	}
 
 	@Test
@@ -52,12 +52,14 @@ public class PcapReaderTest {
 
 	@Test
 	public void findIPStartNULL() {
-		assertEquals(0, reader.findIPStart(PcapReader.LinkType.NULL, null));
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.NULL);
+		assertEquals(0, xreader.findIPStart(null));
 	}
 
 	@Test
 	public void findIPStartEN10MB_8021Q() {
 		byte[] packet = new byte[20];
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.EN10MB);
 
 		byte[] ethernetType8021Q = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_8021Q);
 		packet[12] = ethernetType8021Q[0];
@@ -67,37 +69,41 @@ public class PcapReaderTest {
 		packet[16] = ethernetTypeIp[0];
 		packet[17] = ethernetTypeIp[1];
 
-		assertEquals(18, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+		assertEquals(18, xreader.findIPStart(packet));
 	}
 
 	@Test
 	public void findIPStartEN10MB() {
 		byte[] packet = new byte[20];
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.EN10MB);
 
 		byte[] ethernetType = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_IP);
 		packet[12] = ethernetType[0];
 		packet[13] = ethernetType[1];
 
-		assertEquals(14, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+		assertEquals(14, xreader.findIPStart(packet));
 	}
 
 	@Test
 	public void findIPStartEN10MBUnknownType() {
 		byte[] packet = new byte[20];
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.EN10MB);
 
 		packet[12] = -1;
 		packet[13] = -1;
 
-		assertEquals(-1, reader.findIPStart(PcapReader.LinkType.EN10MB, packet));
+		assertEquals(-1, xreader.findIPStart(packet));
 	}
 
 	@Test
 	public void findIPStartRAW() {
-		assertEquals(0, reader.findIPStart(PcapReader.LinkType.RAW, null));
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.RAW);
+		assertEquals(0, xreader.findIPStart(null));
 	}
 
 	@Test
 	public void findIPStartLOOP() {
-		assertEquals(4, reader.findIPStart(PcapReader.LinkType.LOOP, null));
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.LOOP);
+		assertEquals(4, xreader.findIPStart(null));
 	}
 }
