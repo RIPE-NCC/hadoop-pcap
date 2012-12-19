@@ -41,6 +41,7 @@ public class DnsPcapReader extends PcapReader {
 				dnsPacket.put(DnsPacket.QR, header.getFlag(Flags.QR));
 				dnsPacket.put(DnsPacket.OPCODE, Opcode.string(header.getOpcode()));
 				dnsPacket.put(DnsPacket.RCODE, Rcode.string(header.getRcode()));
+				dnsPacket.put(DnsPacket.QUESTION, convertRecordToString(msg.getQuestion()));
 				dnsPacket.put(DnsPacket.QNAME, convertRecordOwnerToString(msg.getQuestion()));
 				dnsPacket.put(DnsPacket.QTYPE, convertRecordTypeToInt(msg.getQuestion()));
 				dnsPacket.put(DnsPacket.ANSWER, convertRecordsToStrings(msg.getSectionArray(Section.ANSWER)));
