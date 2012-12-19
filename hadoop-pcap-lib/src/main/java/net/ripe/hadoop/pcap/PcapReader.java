@@ -35,7 +35,6 @@ public class PcapReader implements Iterable<Packet> {
 	public static final String PROTOCOL_ICMP = "ICMP";
 	public static final String PROTOCOL_TCP = "TCP";
 	public static final String PROTOCOL_UDP = "UDP";
-	public static final boolean debug = false;
 
 	private final DataInputStream is;
 	private Iterator<Packet> iterator;
@@ -67,8 +66,6 @@ public class PcapReader implements Iterable<Packet> {
 		long linkTypeVal = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET);
 		if ((linkType = getLinkType(linkTypeVal)) == null)
 			throw new IOException("Unsupported link type: " + linkTypeVal);
-		if (debug)
-			System.out.println("linktype = " + linkTypeVal);
 	}
 
 	// Only use this constructor for testcases
@@ -102,15 +99,10 @@ public class PcapReader implements Iterable<Packet> {
 			int j = data[i];
 			if (j < 0)
 				j += 256;
-			/*System.out.format("data[%d] = %x/%d\t", i, j, j);*/
 			sum += j << (i % 2 == 0 ? 8 : 0);
-			/*System.out.format("sum      = %x\n", sum);*/
 		}
 		sum = (sum >> 16) + (sum & 0xffff);
-		/*System.out.format("\t\tsum      = %x\n", sum);*/
 		sum += (sum >> 16);
-		/*System.out.format("\t\tsum      = %x\n", sum);*/
-		/*System.out.format("\t\treturn   = %x\n", (~sum) & 0xffff);*/
 		return (~sum) & 0xffff;
 	}
 
@@ -304,8 +296,6 @@ public class PcapReader implements Iterable<Packet> {
 			fetchNext();
 			if (next != null)
 				return true;
-			if (debug)
-				System.out.println ("hasNext() returns false after " + nPktsRead + " packets");
 			return false;
 		}
 
