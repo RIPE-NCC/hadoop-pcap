@@ -14,6 +14,7 @@ public class Packet extends HashMap<String, Object> {
 	public static final String SRC_PORT = "src_port";
 	public static final String DST_PORT = "dst_port";
 	public static final String LEN = "len";
+	public static final String UDPSUM = "udpsum";
 
 	@Override
 	public String toString() {
