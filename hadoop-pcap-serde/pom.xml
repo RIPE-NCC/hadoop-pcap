@@ -2,7 +2,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.ripe.hadoop.pcap</groupId>
 	<artifactId>hadoop-pcap-serde</artifactId>
-
+	<repositories>
+		<repository>
+		    <id>repo</id>
+		    <url>file://${project.basedir}/repo</url>
+		</repository>
+	</repositories>
 	<parent>
 		<groupId>net.ripe.hadoop.pcap</groupId>
 		<artifactId>hadoop-pcap-root</artifactId>
@@ -32,30 +37,26 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<dependencies>
 		<dependency>
 			<groupId>net.ripe.hadoop.pcap</groupId>
 			<artifactId>hadoop-pcap-lib</artifactId>
 			<version>0.2-SNAPSHOT</version>
 		</dependency>
-
 		<dependency>
-			<groupId>org.apache.hadoop.hive</groupId>
-			<artifactId>hive-serde</artifactId>
-			<version>0.4.1</version>
-			<scope>provided</scope>
+		  <groupId>org.apache.hadoop.hive</groupId>
+		  <artifactId>hive-exec</artifactId>
+		  <version>0.11.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.hadoop.hive</groupId>
-			<artifactId>hive-exec</artifactId>
-			<version>0.4.1</version>
-			<scope>provided</scope>
+		  <groupId>org.apache.hadoop.hive</groupId>
+		  <artifactId>hive-serde</artifactId>
+		  <version>0.11.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-core</artifactId>
-			<version>0.20.2</version>
+			<version>1.1.1</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
