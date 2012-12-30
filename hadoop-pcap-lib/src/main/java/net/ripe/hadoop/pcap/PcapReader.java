@@ -41,6 +41,9 @@ public class PcapReader implements Iterable<Packet> {
 	private LinkType linkType;
 	private boolean caughtEOF = false;
 	private int nPktsRead = 0;
+	
+	//To read reversed-endian PCAPs; the header is the only part that switches
+	private boolean reverseHeaderByteOrder = false;
 
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
@@ -63,7 +66,7 @@ public class PcapReader implements Iterable<Packet> {
 		if (!validateMagicNumber(pcapHeader))
 			throw new IOException("Not a PCAP file (Couldn't find magic number)");
 
-		long linkTypeVal = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET);
+		long linkTypeVal = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET, reverseHeaderByteOrder);
 		if ((linkType = getLinkType(linkTypeVal)) == null)
 			throw new IOException("Unsupported link type: " + linkTypeVal);
 	}
@@ -113,10 +116,10 @@ public class PcapReader implements Iterable<Packet> {
 
 		Packet packet = createPacket();
 
-		long packetTimestamp = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_OFFSET);
+		long packetTimestamp = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_OFFSET, reverseHeaderByteOrder);
 		packet.put(Packet.TIMESTAMP, packetTimestamp);
 
-		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET);
+		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
 		byte[] packetData = new byte[(int)packetSize];
 		if (!readBytes(packetData))
 			return packet;
@@ -148,7 +151,20 @@ public class PcapReader implements Iterable<Packet> {
 	protected void processPacketPayload(Packet packet, byte[] payload) {}
 
 	protected boolean validateMagicNumber(byte[] pcapHeader) {
-		return PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER;
+		
+		if (PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER)
+		{
+			return true;
+		}
+		else if (PcapReaderUtil.convertInt(pcapHeader, true) == MAGIC_NUMBER)
+		{
+			reverseHeaderByteOrder = true;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	protected enum LinkType {
