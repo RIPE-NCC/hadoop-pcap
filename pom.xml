@@ -56,6 +56,13 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<repositories>
+		<repository>
+			<id>cloudera-cdh-build</id>
+			<url>https://repository.cloudera.com/content/groups/cdh-build</url>
+		</repository>
+	</repositories>
+
 	<scm>
 		<connection>scm:git:git://github.com/RIPE-NCC/hadoop-pcap.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/RIPE-NCC/hadoop-pcap.git</developerConnection>

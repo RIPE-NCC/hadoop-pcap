@@ -8,7 +8,7 @@ import java.util.Properties;
 import net.ripe.hadoop.pcap.packet.Packet;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.serde.serdeConstants;
+import org.apache.hadoop.hive.serde.Constants;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
@@ -33,11 +33,11 @@ public class PcapDeserializer implements Deserializer {
 
 	@Override
 	public void initialize(Configuration cfg, Properties props) throws SerDeException {		
-		String columnNameProperty = props.getProperty(serdeConstants.LIST_COLUMNS);
+		String columnNameProperty = props.getProperty(Constants.LIST_COLUMNS);
 		columnNames = Arrays.asList(columnNameProperty.split(","));
 		numColumns = columnNames.size();
 
-		String columnTypeProperty = props.getProperty(serdeConstants.LIST_COLUMN_TYPES);
+		String columnTypeProperty = props.getProperty(Constants.LIST_COLUMN_TYPES);
 		List<TypeInfo> columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
 
 		// Ensure we have the same number of column names and types
