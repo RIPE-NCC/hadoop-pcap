@@ -56,7 +56,7 @@ public class PcapReader implements Iterable<Packet> {
 			// place we check caughtEOF.
 			//
 			if (caughtEOF) {
-				System.out.println("skipping empty file");
+				LOG.warn("Skipping empty file");
 				return;
 			}
 			throw new IOException("Couldn't read PCAP header");

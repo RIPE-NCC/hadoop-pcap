@@ -3,6 +3,8 @@ package net.ripe.hadoop.pcap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 
 import net.ripe.hadoop.pcap.PcapReader;
@@ -16,6 +18,11 @@ public class PcapReaderTest {
 	@Before
 	public void init() throws IOException {
 		reader = new PcapReader(PcapReader.LinkType.NULL);
+	}
+
+	@Test
+	public void emptyFile() throws IOException {
+		new PcapReader(new DataInputStream(new ByteArrayInputStream(new byte[0])));
 	}
 
 	@Test
