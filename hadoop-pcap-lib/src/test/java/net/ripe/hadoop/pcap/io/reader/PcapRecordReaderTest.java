@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings("deprecation")
 public class PcapRecordReaderTest {
 	private static final Log LOG = LogFactory.getLog(PcapRecordReaderTest.class);
 
@@ -92,5 +91,10 @@ public class PcapRecordReaderTest {
 
 		@Override
 		public void progress() {}
+
+		@Override
+		public float getProgress() {
+			return 0;
+		}
 	}
 }
