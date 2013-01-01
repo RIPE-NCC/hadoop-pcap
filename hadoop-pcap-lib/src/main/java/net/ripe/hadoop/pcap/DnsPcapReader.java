@@ -72,7 +72,7 @@ public class DnsPcapReader extends PcapReader {
 
 	private int convertRecordTypeToInt(Record record) {
 		if (record == null)
-			return 0;
+			return -1;
 		return record.getType();
 	}
 
