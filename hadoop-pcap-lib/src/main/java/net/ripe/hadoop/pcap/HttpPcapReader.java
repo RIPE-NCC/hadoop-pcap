@@ -3,10 +3,15 @@ package net.ripe.hadoop.pcap;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import net.ripe.hadoop.pcap.packet.HttpPacket;
 import net.ripe.hadoop.pcap.packet.Packet;
 
 public class HttpPcapReader extends PcapReader{
+	public static final Log LOG = LogFactory.getLog(HttpPcapReader.class);
+
 	public static final int HTTP_PORT = 80;
 	public static final String PROTOCOL = "TCP";
 
@@ -16,7 +21,7 @@ public class HttpPcapReader extends PcapReader{
 
 	@Override
 	protected Packet createPacket() {
-		System.out.println("--- createPacket ---");
+		LOG.debug("--- createPacket ---");
 		return new HttpPacket();
 	}
 
