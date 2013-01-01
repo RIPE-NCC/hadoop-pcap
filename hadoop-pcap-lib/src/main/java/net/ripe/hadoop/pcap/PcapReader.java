@@ -40,7 +40,6 @@ public class PcapReader implements Iterable<Packet> {
 	private Iterator<Packet> iterator;
 	private LinkType linkType;
 	private boolean caughtEOF = false;
-	private int nPktsRead = 0;
 	
 	//To read reversed-endian PCAPs; the header is the only part that switches
 	private boolean reverseHeaderByteOrder = false;
@@ -90,7 +89,6 @@ public class PcapReader implements Iterable<Packet> {
 		 * followed by the entire UDP packet.
 		 */
 		byte data[] = new byte[packetData.length - ipStart - ipHeaderLen + 12];
-    		short answer;
 		int sum = 0;
 		System.arraycopy(packetData, ipStart + IP_SRC_OFFSET,      data, 0, 4);
 		System.arraycopy(packetData, ipStart + IP_DST_OFFSET,      data, 4, 4);
@@ -140,7 +138,6 @@ public class PcapReader implements Iterable<Packet> {
 			}
 		}
 
-		nPktsRead++;
 		return packet;
 	}
 
