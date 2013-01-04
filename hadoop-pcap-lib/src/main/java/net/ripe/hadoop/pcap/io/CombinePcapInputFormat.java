@@ -16,7 +16,6 @@ import org.apache.hadoop.mapred.lib.CombineFileInputFormat;
 import org.apache.hadoop.mapred.lib.CombineFileRecordReader;
 import org.apache.hadoop.mapred.lib.CombineFileSplit;
 
-@SuppressWarnings("deprecation")
 public class CombinePcapInputFormat extends CombineFileInputFormat<LongWritable, ObjectWritable> {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override

@@ -24,7 +24,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
-@SuppressWarnings("deprecation")
 public class PcapInputFormat extends FileInputFormat<LongWritable, ObjectWritable> {
 	static final String READER_CLASS_PROPERTY = "net.ripe.hadoop.pcap.io.reader.class";
 
