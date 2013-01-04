@@ -3,6 +3,7 @@ package net.ripe.hadoop.pcap;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -34,39 +35,19 @@ public class HttpPcapReader extends PcapReader{
 		if ((HTTP_PORT == (Integer)packet.get(Packet.DST_PORT)) && (PROTOCOL_TCP == (String)packet.get(Packet.PROTOCOL)) && (!(s.isEmpty()))){
 			try {	
 				s = s.replace("\n", "").replace("\r", "");
-				httpPacket.put(HttpPacket.GET, substringBetween( s, "GET ", "Host"));
-				httpPacket.put(HttpPacket.HOST, substringBetween( s, "Host: ", "User-Agent"));
-				httpPacket.put(HttpPacket.USER_AGENT, substringBetween( s, "User-Agent: ", "Accept"));
-				httpPacket.put(HttpPacket.ACCEPT, substringBetween( s, "Accept: ", "Accept-Language"));
-				httpPacket.put(HttpPacket.ACCEPT_LANGUAGE, substringBetween( s, "Accept-Language: ", "Accept-Encoding"));
-				httpPacket.put(HttpPacket.ACCEPT_ENCODING, substringBetween( s, "Accept-Encoding: ", "Accept-Charset"));
-				httpPacket.put(HttpPacket.ACCEPT_CHARSET, substringBetween( s, "Accept-Charset: ", "Keep-Alive"));
-				httpPacket.put(HttpPacket.KEEP_ALIVE, substringBetween( s, "Keep-Alive: ", "Connection"));
-				httpPacket.put(HttpPacket.CONNECTION, substringBetween( s, "Connection: ", "Referer"));
-				httpPacket.put(HttpPacket.REFERER, substringBetween( s, "Referer: ", ""));
+				httpPacket.put(HttpPacket.GET, StringUtils.substringBetween( s, "GET ", "Host"));
+				httpPacket.put(HttpPacket.HOST, StringUtils.substringBetween( s, "Host: ", "User-Agent"));
+				httpPacket.put(HttpPacket.USER_AGENT, StringUtils.substringBetween( s, "User-Agent: ", "Accept"));
+				httpPacket.put(HttpPacket.ACCEPT, StringUtils.substringBetween( s, "Accept: ", "Accept-Language"));
+				httpPacket.put(HttpPacket.ACCEPT_LANGUAGE, StringUtils.substringBetween( s, "Accept-Language: ", "Accept-Encoding"));
+				httpPacket.put(HttpPacket.ACCEPT_ENCODING, StringUtils.substringBetween( s, "Accept-Encoding: ", "Accept-Charset"));
+				httpPacket.put(HttpPacket.ACCEPT_CHARSET, StringUtils.substringBetween( s, "Accept-Charset: ", "Keep-Alive"));
+				httpPacket.put(HttpPacket.KEEP_ALIVE, StringUtils.substringBetween( s, "Keep-Alive: ", "Connection"));
+				httpPacket.put(HttpPacket.CONNECTION, StringUtils.substringBetween( s, "Connection: ", "Referer"));
+				httpPacket.put(HttpPacket.REFERER, StringUtils.substringBetween( s, "Referer: ", ""));
 			} catch (Exception e) {
 				// If we cannot decode a http packet we ignore it
 			}
 		}
 	}
-	
-	public static String substringBetween(String str, String open, String close) {
-	      if (str == null || open == null || close == null) {
-	          return null;
-	      }
-	      int start = str.indexOf(open);
-	      int end;
-	      if (start != -1) {
-	    	  if (close == ""){
-	    		  end = str.length();
-	    	  }
-	    	  else{
-	    		  end = str.indexOf(close, start + open.length());
-	    	  }
-	          if (end != -1) {
-	              return str.substring(start + open.length(), end);
-	          }
-	      }
-	      return null;
-	  }
 }
