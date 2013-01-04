@@ -13,7 +13,6 @@ public class HttpPcapReader extends PcapReader{
 	public static final Log LOG = LogFactory.getLog(HttpPcapReader.class);
 
 	public static final int HTTP_PORT = 80;
-	public static final String PROTOCOL = "TCP";
 
 	public HttpPcapReader(DataInputStream is) throws IOException {
 		super(is);
@@ -32,7 +31,7 @@ public class HttpPcapReader extends PcapReader{
 		HttpPacket httpPacket = (HttpPacket)packet;
 		String s = new String(payload);
 		
-		if ((HTTP_PORT == (Integer)packet.get(Packet.DST_PORT)) && (PROTOCOL == (String)packet.get(Packet.PROTOCOL)) && (!(s.isEmpty()))){
+		if ((HTTP_PORT == (Integer)packet.get(Packet.DST_PORT)) && (PROTOCOL_TCP == (String)packet.get(Packet.PROTOCOL)) && (!(s.isEmpty()))){
 			try {	
 				s = s.replace("\n", "").replace("\r", "");
 				httpPacket.put(HttpPacket.GET, substringBetween( s, "GET ", "Host"));
