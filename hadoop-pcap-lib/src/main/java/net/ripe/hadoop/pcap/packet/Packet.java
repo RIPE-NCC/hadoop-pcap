@@ -15,6 +15,15 @@ public class Packet extends HashMap<String, Object> {
 	public static final String DST_PORT = "dst_port";
 	public static final String LEN = "len";
 	public static final String UDPSUM = "udpsum";
+	public static final String TCP_FLAG_NS = "tcp_flag_ns";
+	public static final String TCP_FLAG_CWR = "tcp_flag_cwr";
+	public static final String TCP_FLAG_ECE = "tcp_flag_ece";
+	public static final String TCP_FLAG_URG = "tcp_flag_urg";
+	public static final String TCP_FLAG_ACK = "tcp_flag_ack";
+	public static final String TCP_FLAG_PSH = "tcp_flag_psh";
+	public static final String TCP_FLAG_RST = "tcp_flag_rst";
+	public static final String TCP_FLAG_SYN = "tcp_flag_syn";
+	public static final String TCP_FLAG_FIN = "tcp_flag_fin";
 
 	@Override
 	public String toString() {

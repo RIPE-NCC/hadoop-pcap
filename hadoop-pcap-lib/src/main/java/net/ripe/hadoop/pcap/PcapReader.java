@@ -249,10 +249,25 @@ public class PcapReader implements Iterable<Packet> {
 			int cksum = getUdpChecksum(packetData, ipStart, ipHeaderLen);
 			if (cksum >= 0)
 				packet.put(Packet.UDPSUM, cksum);
-		} else if (PROTOCOL_TCP.equals(protocol))
+		} else if (PROTOCOL_TCP.equals(protocol)) {
 			headerSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
-		else
+
+			// Flags stretch two bytes starting at the TCP header offset
+			int flags = PcapReaderUtil.convertShort(new byte[] { packetData[ipStart + ipHeaderLen + TCP_HEADER_DATA_OFFSET],
+			                                                     packetData[ipStart + ipHeaderLen + TCP_HEADER_DATA_OFFSET + 1] })
+			                                       & 0x1FF; // Filter first 7 bits. First 4 are the data offset and the other 3 reserved for future use.
+			packet.put(Packet.TCP_FLAG_NS, (flags & 0x100) == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_CWR, (flags & 0x80) == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_ECE, (flags & 0x40) == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_URG, (flags & 0x20) == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_ACK, (flags & 0x10) == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_PSH, (flags & 0x8)  == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_RST, (flags & 0x4)  == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_SYN, (flags & 0x2)  == 0 ? false : true);
+			packet.put(Packet.TCP_FLAG_FIN, (flags & 0x1)  == 0 ? false : true);
+		} else {
 			return null;
+		}
 
 		int payloadDataStart = ipStart + ipHeaderLen + headerSize;
 		byte[] data = readPayload(packetData, payloadDataStart);
