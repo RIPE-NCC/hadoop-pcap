@@ -23,6 +23,8 @@ public class PcapReader implements Iterable<Packet> {
 	public static final int ETHERNET_TYPE_OFFSET = 12;
 	public static final int ETHERNET_TYPE_IP = 0x800;
 	public static final int ETHERNET_TYPE_8021Q = 0x8100;
+	public static final int SLL_HEADER_BASE_SIZE = 10; // SLL stands for Linux cooked-mode capture
+	public static final int SLL_ADDRESS_LENGTH_OFFSET = 4; // relative to SLL header
 	public static final int IP_VHL_OFFSET = 0;	// relative to start of IP header
 	public static final int IP_TTL_OFFSET = 8;	// relative to start of IP header
 	public static final int IP_PROTOCOL_OFFSET = 9;	// relative to start of IP header
@@ -165,7 +167,7 @@ public class PcapReader implements Iterable<Packet> {
 	}
 
 	protected enum LinkType {
-		NULL, EN10MB, RAW, LOOP
+		NULL, EN10MB, RAW, LOOP, LINUX_SLL
 	}
 
 	protected LinkType getLinkType(long linkTypeVal) {
@@ -178,16 +180,19 @@ public class PcapReader implements Iterable<Packet> {
 				return LinkType.RAW;
 			case 108:
 				return LinkType.LOOP;
+			case 113: 
+				return LinkType.LINUX_SLL;
 		}
 		return null;
 	}
 
 	protected int findIPStart(byte[] packet) {
+		int start = -1;
 		switch (linkType) {
 			case NULL:
 				return 0;
 			case EN10MB:
-				int start = ETHERNET_HEADER_SIZE;
+				start = ETHERNET_HEADER_SIZE;
 				int etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET);
 				if (etherType == ETHERNET_TYPE_8021Q) {
 					etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET + 4);
@@ -200,6 +205,11 @@ public class PcapReader implements Iterable<Packet> {
 				return 0;
 			case LOOP:
 				return 4;
+			case LINUX_SLL:
+			    start = SLL_HEADER_BASE_SIZE;
+				int sllAddressLength = PcapReaderUtil.convertShort(packet, SLL_ADDRESS_LENGTH_OFFSET);
+				start += sllAddressLength;
+				return start;
 		}
 		return -1;
 	}
