@@ -58,6 +58,11 @@ public class PcapReaderTest {
 	}
 
 	@Test
+	public void getLinkTypeSLL() {
+		assertEquals(PcapReader.LinkType.LINUX_SLL, reader.getLinkType(113));
+	}
+
+	@Test
 	public void findIPStartNULL() {
 		PcapReader xreader = new PcapReader(PcapReader.LinkType.NULL);
 		assertEquals(0, xreader.findIPStart(null));
@@ -77,6 +82,22 @@ public class PcapReaderTest {
 		packet[17] = ethernetTypeIp[1];
 
 		assertEquals(18, xreader.findIPStart(packet));
+	}
+
+	@Test
+	public void findIPStartSLL() {
+		byte[] packet = new byte[20];
+		PcapReader xreader = new PcapReader(PcapReader.LinkType.LINUX_SLL);
+
+		byte[] sllAddressSourceLength = PcapReaderUtil.convertShort(6);
+		packet[4] = sllAddressSourceLength[0];
+		packet[5] = sllAddressSourceLength[1];
+
+		byte[] ethernetTypeIp = PcapReaderUtil.convertShort(PcapReader.ETHERNET_TYPE_IP);
+		packet[16] = ethernetTypeIp[0];
+		packet[17] = ethernetTypeIp[1];
+
+		assertEquals(16, xreader.findIPStart(packet));
 	}
 
 	@Test
