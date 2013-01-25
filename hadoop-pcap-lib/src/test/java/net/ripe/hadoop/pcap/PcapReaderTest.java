@@ -27,13 +27,14 @@ public class PcapReaderTest {
 
 	@Test
 	public void readPayload() {
-		byte[] payload = reader.readPayload(new String("foo bar").getBytes(), 4);
+		byte[] stringBytes = new String("foo bar").getBytes();
+		byte[] payload = reader.readPayload(stringBytes, 4, stringBytes.length-4);
 		assertEquals("bar", new String(payload));
 	}
 
 	@Test
 	public void readPayloadBrokenOffset() {
-		byte[] payload = reader.readPayload(new byte[1], 2);
+		byte[] payload = reader.readPayload(new byte[1], 2, 1);
 		assertTrue(0 == payload.length);
 	}
 
