@@ -18,6 +18,7 @@ public class PcapReader implements Iterable<Packet> {
 	public static final int PCAP_HEADER_LINKTYPE_OFFSET = 20;
 	public static final int PACKET_HEADER_SIZE = 16;
 	public static final int TIMESTAMP_OFFSET = 0;
+	public static final int TIMESTAMP_MICROS_OFFSET = 4;
 	public static final int CAP_LEN_OFFSET = 8;
 	public static final int ETHERNET_HEADER_SIZE = 14;
 	public static final int ETHERNET_TYPE_OFFSET = 12;
@@ -109,6 +110,11 @@ public class PcapReader implements Iterable<Packet> {
 		return (~sum) & 0xffff;
 	}
 
+	private int getUdpLength(byte[] packetData, int ipStart, int ipHeaderLen) {
+		int udpLen = PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + 4);
+		return udpLen;
+	}
+
 	private Packet nextPacket() {
 		byte[] pcapPacketHeader = new byte[PACKET_HEADER_SIZE];
 		if (!readBytes(pcapPacketHeader))
@@ -118,6 +124,9 @@ public class PcapReader implements Iterable<Packet> {
 
 		long packetTimestamp = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_OFFSET, reverseHeaderByteOrder);
 		packet.put(Packet.TIMESTAMP, packetTimestamp);
+
+		long packetTimestampMicros = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_MICROS_OFFSET, reverseHeaderByteOrder);
+		packet.put(Packet.TIMESTAMP_MICROS, packetTimestampMicros);
 
 		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
 		byte[] packetData = new byte[(int)packetSize];
@@ -252,15 +261,19 @@ public class PcapReader implements Iterable<Packet> {
 
 		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_DST_PORT_OFFSET));
 
-		int headerSize;
+		int tcpOrUdpHeaderSize;
+		int payloadLength = 0;
 		final String protocol = (String)packet.get(Packet.PROTOCOL);
 		if (PROTOCOL_UDP.equals(protocol)) {
-			headerSize = UDP_HEADER_SIZE;
+			tcpOrUdpHeaderSize = UDP_HEADER_SIZE;
 			int cksum = getUdpChecksum(packetData, ipStart, ipHeaderLen);
 			if (cksum >= 0)
 				packet.put(Packet.UDPSUM, cksum);
+			int udpLen = getUdpLength(packetData, ipStart, ipHeaderLen);
+			packet.put(Packet.UDP_LENGTH, udpLen);
+			payloadLength = udpLen - UDP_HEADER_SIZE; // UDP header size is 8
 		} else if (PROTOCOL_TCP.equals(protocol)) {
-			headerSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
+			tcpOrUdpHeaderSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
 
 			// Flags stretch two bytes starting at the TCP header offset
 			int flags = PcapReaderUtil.convertShort(new byte[] { packetData[ipStart + ipHeaderLen + TCP_HEADER_DATA_OFFSET],
@@ -275,12 +288,13 @@ public class PcapReader implements Iterable<Packet> {
 			packet.put(Packet.TCP_FLAG_RST, (flags & 0x4)  == 0 ? false : true);
 			packet.put(Packet.TCP_FLAG_SYN, (flags & 0x2)  == 0 ? false : true);
 			packet.put(Packet.TCP_FLAG_FIN, (flags & 0x1)  == 0 ? false : true);
+			payloadLength = packetData.length - (ipStart + ipHeaderLen + tcpOrUdpHeaderSize);
 		} else {
 			return null;
 		}
 
-		int payloadDataStart = ipStart + ipHeaderLen + headerSize;
-		byte[] data = readPayload(packetData, payloadDataStart);
+		int payloadDataStart = ipStart + ipHeaderLen + tcpOrUdpHeaderSize;
+		byte[] data = readPayload(packetData, payloadDataStart, payloadLength);
 		packet.put(Packet.LEN, data.length);
 		return data;
 	}
@@ -292,13 +306,20 @@ public class PcapReader implements Iterable<Packet> {
 	 * @param payloadDataStart
 	 * @return payload as byte[]
 	 */
-	protected byte[] readPayload(byte[] packetData, int payloadDataStart) {
+	protected byte[] readPayload(byte[] packetData, int payloadDataStart, int payloadLength) {
 		if (payloadDataStart > packetData.length) {
 			LOG.warn("Payload start (" + payloadDataStart + ") is larger than packet data (" + packetData.length + "). Returning empty payload.");
 			return new byte[0];
 		}
-		byte[] data = new byte[packetData.length - payloadDataStart];
-		System.arraycopy(packetData, payloadDataStart, data, 0, data.length);
+		if (payloadDataStart + payloadLength > packetData.length) {
+			// probably a corrupted packet. 
+			LOG.warn("Payload length field value (" + payloadLength + ") is larger than available packet data (" 
+					+ (packetData.length - payloadDataStart) 
+					+ "). Packet may be corrupted. Returning only available data.");
+			payloadLength = packetData.length - payloadDataStart;
+		}
+		byte[] data = new byte[payloadLength];
+		System.arraycopy(packetData, payloadDataStart, data, 0, payloadLength);
 		return data;
 	}
 
