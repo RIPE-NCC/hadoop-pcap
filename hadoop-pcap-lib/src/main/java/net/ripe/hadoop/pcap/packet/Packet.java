@@ -7,6 +7,7 @@ public class Packet extends HashMap<String, Object> {
 	private static final long serialVersionUID = 8723206921174160146L;
 
 	public static final String TIMESTAMP = "ts";
+	public static final String TIMESTAMP_MICROS = "tsmicros";
 	public static final String TTL = "ttl";
 	public static final String PROTOCOL = "protocol";
 	public static final String SRC = "src";
@@ -15,6 +16,7 @@ public class Packet extends HashMap<String, Object> {
 	public static final String DST_PORT = "dst_port";
 	public static final String LEN = "len";
 	public static final String UDPSUM = "udpsum";
+	public static final String UDP_LENGTH = "udp_length";
 	public static final String TCP_FLAG_NS = "tcp_flag_ns";
 	public static final String TCP_FLAG_CWR = "tcp_flag_cwr";
 	public static final String TCP_FLAG_ECE = "tcp_flag_ece";
