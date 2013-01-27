@@ -14,6 +14,8 @@ public class Packet extends HashMap<String, Object> {
 	public static final String DST = "dst";
 	public static final String SRC_PORT = "src_port";
 	public static final String DST_PORT = "dst_port";
+        public static final String TCP_SEQ = "tcp_seq";
+        public static final String TCP_ACK = "tcp_ack";
 	public static final String LEN = "len";
 	public static final String UDPSUM = "udpsum";
 	public static final String UDP_LENGTH = "udp_length";

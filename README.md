@@ -1,11 +1,14 @@
-Hadoop PCAP library
+Hadoop PCAP library  :: Forked by Mrrrgn
 ===================
+
+Why did I fork it?  The original library doesn't have support for sequence/acknowledgement numbers or adequate payload filtering.
+I've already added seq/ack support with payload filtering to come.  This is in anticipation of having a hadoop based tcp stream 
+assembler.  :)
 
 License
 -------
 This library is distributed under the LGPL.  
 See: https://raw.github.com/RIPE-NCC/hadoop-pcap/master/LICENSE
-
 
 Download
 --------
