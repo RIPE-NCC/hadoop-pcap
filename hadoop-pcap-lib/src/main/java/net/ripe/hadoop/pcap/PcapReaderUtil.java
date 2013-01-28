@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.math.BigInteger;
 
 public class PcapReaderUtil {
 	private static Map<Integer, String> protocols;
@@ -59,6 +60,15 @@ public class PcapReaderUtil {
 		byte[] target = new byte[2];
 		System.arraycopy(data, offset, target, 0, target.length);
 		return convertShort(target);
+	}
+
+	//A java workaround for header fields like seq/ack which are ulongs --M
+	public static long convertUnsignedInt(byte[] data,int offset) {
+		byte[] target = new byte[4];
+		System.arraycopy(data, offset, target, 0, target.length);
+
+		BigInteger placeholder = new BigInteger(1,target);
+		return placeholder.longValue();
 	}
 
 	public static String convertProtocolIdentifier(int identifier) {

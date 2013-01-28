@@ -279,8 +279,8 @@ public class PcapReader implements Iterable<Packet> {
                         
 			//Store the sequence and acknowledgement numbers --M
 
-                        packet.put(Packet.TCP_SEQ,PcapReaderUtil.convertInt(packetData,ipStart+ ipHeaderLen + PROTOCOL_HEADER_TCP_SEQ_OFFSET));
-                        packet.put(Packet.TCP_ACK,PcapReaderUtil.convertInt(packetData,ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_ACK_OFFSET));
+                        packet.put(Packet.TCP_SEQ,PcapReaderUtil.convertUnsignedInt(packetData,ipStart+ ipHeaderLen + PROTOCOL_HEADER_TCP_SEQ_OFFSET));
+                        packet.put(Packet.TCP_ACK,PcapReaderUtil.convertUnsignedInt(packetData,ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_ACK_OFFSET));
 
 
 			// Flags stretch two bytes starting at the TCP header offset
