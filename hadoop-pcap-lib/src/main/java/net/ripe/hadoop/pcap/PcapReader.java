@@ -34,6 +34,8 @@ public class PcapReader implements Iterable<Packet> {
 	public static final int UDP_HEADER_SIZE = 8;
 	public static final int PROTOCOL_HEADER_SRC_PORT_OFFSET = 0;
 	public static final int PROTOCOL_HEADER_DST_PORT_OFFSET = 2;
+        public static final int PROTOCOL_HEADER_TCP_SEQ_OFFSET = 4;
+        public static final int PROTOCOL_HEADER_TCP_ACK_OFFSET = 8;
 	public static final int TCP_HEADER_DATA_OFFSET = 12;
 	public static final String PROTOCOL_ICMP = "ICMP";
 	public static final String PROTOCOL_TCP = "TCP";
@@ -274,6 +276,12 @@ public class PcapReader implements Iterable<Packet> {
 			payloadLength = udpLen - UDP_HEADER_SIZE; // UDP header size is 8
 		} else if (PROTOCOL_TCP.equals(protocol)) {
 			tcpOrUdpHeaderSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
+                        
+			//Store the sequence and acknowledgement numbers --M
+
+                        packet.put(Packet.TCP_SEQ,PcapReaderUtil.convertUnsignedInt(packetData,ipStart+ ipHeaderLen + PROTOCOL_HEADER_TCP_SEQ_OFFSET));
+                        packet.put(Packet.TCP_ACK,PcapReaderUtil.convertUnsignedInt(packetData,ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_ACK_OFFSET));
+
 
 			// Flags stretch two bytes starting at the TCP header offset
 			int flags = PcapReaderUtil.convertShort(new byte[] { packetData[ipStart + ipHeaderLen + TCP_HEADER_DATA_OFFSET],
