@@ -201,7 +201,7 @@ public class PcapReader implements Iterable<Packet> {
 		int start = -1;
 		switch (linkType) {
 			case NULL:
-				return 0;
+				return 4;
 			case EN10MB:
 				start = ETHERNET_HEADER_SIZE;
 				int etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET);
