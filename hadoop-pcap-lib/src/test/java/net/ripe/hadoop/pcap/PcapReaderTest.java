@@ -66,7 +66,7 @@ public class PcapReaderTest {
 	@Test
 	public void findIPStartNULL() {
 		PcapReader xreader = new PcapReader(PcapReader.LinkType.NULL);
-		assertEquals(0, xreader.findIPStart(null));
+		assertEquals(4, xreader.findIPStart(null));
 	}
 
 	@Test
