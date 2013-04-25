@@ -30,6 +30,7 @@ public class PcapReaderRunner {
 	public void run(String pcapReaderClass, String path) throws IOException {
 		InputStream is = null;
 		try {
+			long packets = 0;
 			System.out.println("=== START ===");
 
 			is = new FileInputStream(path);
@@ -41,8 +42,10 @@ public class PcapReaderRunner {
 			for (Packet packet : reader) {
 				System.out.println("--- packet ---");
 				System.out.println(packet.toString());
+				packets++;
 			}
 			System.out.println("=== STOP ===");
+			System.out.println("Packets: " + packets);
 		} finally {
 			if (is != null)
 				is.close();
