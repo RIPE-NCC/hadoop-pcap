@@ -9,13 +9,14 @@ public class Packet extends HashMap<String, Object> {
 	public static final String TIMESTAMP = "ts";
 	public static final String TIMESTAMP_MICROS = "tsmicros";
 	public static final String TTL = "ttl";
+	public static final String IP_VERSION = "ip_version";	
 	public static final String PROTOCOL = "protocol";
 	public static final String SRC = "src";
 	public static final String DST = "dst";
 	public static final String SRC_PORT = "src_port";
 	public static final String DST_PORT = "dst_port";
-        public static final String TCP_SEQ = "tcp_seq";
-        public static final String TCP_ACK = "tcp_ack";
+	public static final String TCP_SEQ = "tcp_seq";
+	public static final String TCP_ACK = "tcp_ack";
 	public static final String LEN = "len";
 	public static final String UDPSUM = "udpsum";
 	public static final String UDP_LENGTH = "udp_length";

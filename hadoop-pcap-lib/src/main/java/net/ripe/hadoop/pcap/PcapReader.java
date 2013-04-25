@@ -23,19 +23,24 @@ public class PcapReader implements Iterable<Packet> {
 	public static final int ETHERNET_HEADER_SIZE = 14;
 	public static final int ETHERNET_TYPE_OFFSET = 12;
 	public static final int ETHERNET_TYPE_IP = 0x800;
+	public static final int ETHERNET_TYPE_IPV6 = 0x86dd;
 	public static final int ETHERNET_TYPE_8021Q = 0x8100;
 	public static final int SLL_HEADER_BASE_SIZE = 10; // SLL stands for Linux cooked-mode capture
 	public static final int SLL_ADDRESS_LENGTH_OFFSET = 4; // relative to SLL header
 	public static final int IP_VHL_OFFSET = 0;	// relative to start of IP header
 	public static final int IP_TTL_OFFSET = 8;	// relative to start of IP header
+	public static final int IPV6_HOPLIMIT_OFFSET = 7; // relative to start of IP header
 	public static final int IP_PROTOCOL_OFFSET = 9;	// relative to start of IP header
+	public static final int IPV6_NEXTHEADER_OFFSET = 6; // relative to start of IP header
 	public static final int IP_SRC_OFFSET = 12;	// relative to start of IP header
+	public static final int IPV6_SRC_OFFSET = 8; // relative to start of IP header
 	public static final int IP_DST_OFFSET = 16;	// relative to start of IP header
+	public static final int IPV6_DST_OFFSET = 24; // relative to start of IP header
 	public static final int UDP_HEADER_SIZE = 8;
 	public static final int PROTOCOL_HEADER_SRC_PORT_OFFSET = 0;
 	public static final int PROTOCOL_HEADER_DST_PORT_OFFSET = 2;
-        public static final int PROTOCOL_HEADER_TCP_SEQ_OFFSET = 4;
-        public static final int PROTOCOL_HEADER_TCP_ACK_OFFSET = 8;
+	public static final int PROTOCOL_HEADER_TCP_SEQ_OFFSET = 4;
+	public static final int PROTOCOL_HEADER_TCP_ACK_OFFSET = 8;
 	public static final int TCP_HEADER_DATA_OFFSET = 12;
 	public static final String PROTOCOL_ICMP = "ICMP";
 	public static final String PROTOCOL_TCP = "TCP";
@@ -139,14 +144,21 @@ public class PcapReader implements Iterable<Packet> {
 		if (ipStart == -1)
 			return packet;
 
-		if (getInternetProtocolHeaderVersion(packetData, ipStart) == 4) {
-			buildInternetProtocolV4Packet(packet, packetData, ipStart);
-	
+		int ipProtocolHeaderVersion = getInternetProtocolHeaderVersion(packetData, ipStart);
+		packet.put(Packet.IP_VERSION, ipProtocolHeaderVersion);
+
+		if (ipProtocolHeaderVersion == 4 || ipProtocolHeaderVersion == 6) {
+			if (ipProtocolHeaderVersion == 4)
+				buildInternetProtocolV4Packet(packet, packetData, ipStart);
+			else if (ipProtocolHeaderVersion == 6)
+				buildInternetProtocolV6Packet(packet, packetData, ipStart);
+
 			String protocol = (String)packet.get(Packet.PROTOCOL);
 			if (PROTOCOL_UDP == protocol || 
 			    PROTOCOL_TCP == protocol) {
 	
-				byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData, ipStart);
+				int ipHeaderLen = getInternetProtocolHeaderLength(packetData, ipProtocolHeaderVersion, ipStart);
+				byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData, ipProtocolHeaderVersion, ipStart, ipHeaderLen);
 				processPacketPayload(packet, packetPayload);
 			}
 		}
@@ -160,7 +172,7 @@ public class PcapReader implements Iterable<Packet> {
 
 	protected void processPacketPayload(Packet packet, byte[] payload) {}
 
-	protected boolean validateMagicNumber(byte[] pcapHeader) {		
+	protected boolean validateMagicNumber(byte[] pcapHeader) {
 		if (PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER) {
 			return true;
 		} else if (PcapReaderUtil.convertInt(pcapHeader, true) == MAGIC_NUMBER) {
@@ -203,7 +215,7 @@ public class PcapReader implements Iterable<Packet> {
 					etherType = PcapReaderUtil.convertShort(packet, ETHERNET_TYPE_OFFSET + 4);
 					start += 4;
 				}
-				if (etherType == ETHERNET_TYPE_IP)
+				if (etherType == ETHERNET_TYPE_IP || etherType == ETHERNET_TYPE_IPV6)
 					return start;
 				break;
 			case RAW:
@@ -219,8 +231,12 @@ public class PcapReader implements Iterable<Packet> {
 		return -1;
 	}
 
-	private int getInternetProtocolHeaderLength(byte[] packet, int ipStart) {
-		return (packet[ipStart + IP_VHL_OFFSET] & 0xF) * 4;
+	private int getInternetProtocolHeaderLength(byte[] packet, int ipProtocolHeaderVersion, int ipStart) {
+		if (ipProtocolHeaderVersion == 4)
+			return (packet[ipStart + IP_VHL_OFFSET] & 0xF) * 4;
+		else if (ipProtocolHeaderVersion == 6)
+			return 40;
+		return -1;
 	}
 
 	private int getInternetProtocolHeaderVersion(byte[] packet, int ipStart) {
@@ -239,10 +255,24 @@ public class PcapReader implements Iterable<Packet> {
 		int protocol = packetData[ipStart + IP_PROTOCOL_OFFSET];
 		packet.put(Packet.PROTOCOL, PcapReaderUtil.convertProtocolIdentifier(protocol));
 
-		String src = PcapReaderUtil.convertAddress(packetData, ipStart + IP_SRC_OFFSET);
+		String src = PcapReaderUtil.convertAddress(packetData, ipStart + IP_SRC_OFFSET, 4);
 		packet.put(Packet.SRC, src);
 
-		String dst = PcapReaderUtil.convertAddress(packetData, ipStart + IP_DST_OFFSET);
+		String dst = PcapReaderUtil.convertAddress(packetData, ipStart + IP_DST_OFFSET, 4);
+		packet.put(Packet.DST, dst);
+	}
+
+	private void buildInternetProtocolV6Packet(Packet packet, byte[] packetData, int ipStart) {
+		int ttl = packetData[ipStart + IPV6_HOPLIMIT_OFFSET] & 0xFF;
+		packet.put(Packet.TTL, ttl);
+
+		int protocol = packetData[ipStart + IPV6_NEXTHEADER_OFFSET];
+		packet.put(Packet.PROTOCOL, PcapReaderUtil.convertProtocolIdentifier(protocol));
+
+		String src = PcapReaderUtil.convertAddress(packetData, ipStart + IPV6_SRC_OFFSET, 16);
+		packet.put(Packet.SRC, src);
+
+		String dst = PcapReaderUtil.convertAddress(packetData, ipStart + IPV6_DST_OFFSET, 16);
 		packet.put(Packet.DST, dst);
 	}
 
@@ -250,11 +280,8 @@ public class PcapReader implements Iterable<Packet> {
 	 * packetData is the entire layer 2 packet read from pcap
 	 * ipStart is the start of the IP packet in packetData
 	 */
-	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipStart) {
-		int ipHeaderLen = getInternetProtocolHeaderLength(packetData, ipStart);
-
+	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipProtocolHeaderVersion, int ipStart, int ipHeaderLen) {
 		packet.put(Packet.SRC_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_SRC_PORT_OFFSET));
-
 		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_DST_PORT_OFFSET));
 
 		int tcpOrUdpHeaderSize;
@@ -262,11 +289,17 @@ public class PcapReader implements Iterable<Packet> {
 		final String protocol = (String)packet.get(Packet.PROTOCOL);
 		if (PROTOCOL_UDP.equals(protocol)) {
 			tcpOrUdpHeaderSize = UDP_HEADER_SIZE;
-			int cksum = getUdpChecksum(packetData, ipStart, ipHeaderLen);
-			if (cksum >= 0)
-				packet.put(Packet.UDPSUM, cksum);
+
+			if (ipProtocolHeaderVersion == 4) {
+				int cksum = getUdpChecksum(packetData, ipStart, ipHeaderLen);
+				if (cksum >= 0)
+					packet.put(Packet.UDPSUM, cksum);
+			}
+			// TODO UDP Checksum for IPv6 packets
+
 			int udpLen = getUdpLength(packetData, ipStart, ipHeaderLen);
 			packet.put(Packet.UDP_LENGTH, udpLen);
+
 			payloadLength = udpLen - UDP_HEADER_SIZE; // UDP header size is 8
 		} else if (PROTOCOL_TCP.equals(protocol)) {
 			tcpOrUdpHeaderSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);

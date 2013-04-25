@@ -75,8 +75,8 @@ public class PcapReaderUtil {
 		return protocols.get(identifier);
 	}
 
-	public static String convertAddress(byte[] data, int offset) {
-		byte[] addr = new byte[4];
+	public static String convertAddress(byte[] data, int offset, int size) {
+		byte[] addr = new byte[size];
 		System.arraycopy(data, offset, addr, 0, addr.length);
 		try {
 			return InetAddress.getByAddress(addr).getHostAddress();
