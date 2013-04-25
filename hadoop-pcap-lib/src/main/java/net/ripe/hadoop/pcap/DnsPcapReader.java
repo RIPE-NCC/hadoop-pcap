@@ -3,6 +3,7 @@ package net.ripe.hadoop.pcap;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import net.ripe.hadoop.pcap.packet.DnsPacket;
@@ -33,6 +34,8 @@ public class DnsPcapReader extends PcapReader {
 		DnsPacket dnsPacket = (DnsPacket)packet;
 
 		if (DNS_PORT == (Integer)packet.get(Packet.SRC_PORT) || DNS_PORT == (Integer)packet.get(Packet.DST_PORT)) {
+			if (PcapReader.PROTOCOL_TCP.equals(packet.get(Packet.PROTOCOL))) // First two bytes denote the size of the DNS message, ignore them
+				payload = Arrays.copyOfRange(payload, 2, payload.length);
 			try {
 				Message msg = new Message(payload);
 				Header header = msg.getHeader();
