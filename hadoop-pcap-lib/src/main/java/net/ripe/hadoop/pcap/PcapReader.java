@@ -160,19 +160,13 @@ public class PcapReader implements Iterable<Packet> {
 
 	protected void processPacketPayload(Packet packet, byte[] payload) {}
 
-	protected boolean validateMagicNumber(byte[] pcapHeader) {
-		
-		if (PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER)
-		{
+	protected boolean validateMagicNumber(byte[] pcapHeader) {		
+		if (PcapReaderUtil.convertInt(pcapHeader) == MAGIC_NUMBER) {
 			return true;
-		}
-		else if (PcapReaderUtil.convertInt(pcapHeader, true) == MAGIC_NUMBER)
-		{
+		} else if (PcapReaderUtil.convertInt(pcapHeader, true) == MAGIC_NUMBER) {
 			reverseHeaderByteOrder = true;
 			return true;
-		}
-		else
-		{
+		} else {
 			return false;
 		}
 	}
