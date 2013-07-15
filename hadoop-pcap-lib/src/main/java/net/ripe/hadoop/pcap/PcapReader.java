@@ -4,6 +4,8 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.math.BigDecimal;
+import java.math.MathContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +52,8 @@ public class PcapReader implements Iterable<Packet> {
 	private Iterator<Packet> iterator;
 	private LinkType linkType;
 	private boolean caughtEOF = false;
+    // MathContext for BigDecimal to preserve only 16 decimal digits
+    private MathContext ts_mc = new MathContext(16);
 	
 	//To read reversed-endian PCAPs; the header is the only part that switches
 	private boolean reverseHeaderByteOrder = false;
@@ -134,6 +138,11 @@ public class PcapReader implements Iterable<Packet> {
 
 		long packetTimestampMicros = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_MICROS_OFFSET, reverseHeaderByteOrder);
 		packet.put(Packet.TIMESTAMP_MICROS, packetTimestampMicros);
+
+        // Prepare the timestamp with a BigDecimal to include microseconds
+        BigDecimal packetTimestampUsec = new BigDecimal(packetTimestamp
+        + (double) packetTimestampMicros/1000000, ts_mc);
+        packet.put(Packet.TS_USEC, packetTimestampUsec);
 
 		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
 		byte[] packetData = new byte[(int)packetSize];
