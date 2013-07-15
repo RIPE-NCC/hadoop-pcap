@@ -8,6 +8,7 @@ public class Packet extends HashMap<String, Object> {
 
 	public static final String TIMESTAMP = "ts";
 	public static final String TIMESTAMP_MICROS = "tsmicros";
+    public static final String TS_USEC = "ts_usec";
 	public static final String TTL = "ttl";
 	public static final String IP_VERSION = "ip_version";	
 	public static final String PROTOCOL = "protocol";
