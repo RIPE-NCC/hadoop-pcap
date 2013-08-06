@@ -24,6 +24,7 @@ You can use the following parameters to combine multiple input files into splits
 
 	CREATE EXTERNAL TABLE pcaps (ts bigint,
 	                             ts_usec decimal,
+                                 ip_version int,
 	                             protocol string,
 	                             src string,
 	                             src_port int,
