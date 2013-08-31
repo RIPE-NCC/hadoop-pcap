@@ -51,6 +51,7 @@ public class PcapReader implements Iterable<Packet> {
 	private final DataInputStream is;
 	private Iterator<Packet> iterator;
 	private LinkType linkType;
+	private long snapLen;
 	private boolean caughtEOF = false;
     // MathContext for BigDecimal to preserve only 16 decimal digits
     private MathContext ts_mc = new MathContext(16);
@@ -78,6 +79,8 @@ public class PcapReader implements Iterable<Packet> {
 
 		if (!validateMagicNumber(pcapHeader))
 			throw new IOException("Not a PCAP file (Couldn't find magic number)");
+
+		snapLen = PcapReaderUtil.convertInt(pcapHeader, 16, reverseHeaderByteOrder);
 
 		long linkTypeVal = PcapReaderUtil.convertInt(pcapHeader, PCAP_HEADER_LINKTYPE_OFFSET, reverseHeaderByteOrder);
 		if ((linkType = getLinkType(linkTypeVal)) == null)
@@ -356,10 +359,10 @@ public class PcapReader implements Iterable<Packet> {
 			return new byte[0];
 		}
 		if (payloadDataStart + payloadLength > packetData.length) {
-			// probably a corrupted packet. 
-			LOG.warn("Payload length field value (" + payloadLength + ") is larger than available packet data (" 
-					+ (packetData.length - payloadDataStart) 
-					+ "). Packet may be corrupted. Returning only available data.");
+			if (payloadDataStart + payloadLength <= snapLen) // Only corrupted if it was not because of a reduced snap length
+				LOG.warn("Payload length field value (" + payloadLength + ") is larger than available packet data (" 
+						+ (packetData.length - payloadDataStart) 
+						+ "). Packet may be corrupted. Returning only available data.");
 			payloadLength = packetData.length - payloadDataStart;
 		}
 		byte[] data = new byte[payloadLength];
