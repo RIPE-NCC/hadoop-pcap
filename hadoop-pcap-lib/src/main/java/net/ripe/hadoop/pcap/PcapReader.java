@@ -232,7 +232,7 @@ public class PcapReader implements Iterable<Packet> {
 	}
 
 	protected boolean isReassemble() {
-		return true;
+		return false;
 	}
 
 	protected boolean isPush() {

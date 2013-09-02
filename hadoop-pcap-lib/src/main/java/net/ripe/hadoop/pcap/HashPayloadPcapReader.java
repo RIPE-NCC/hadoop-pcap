@@ -19,6 +19,16 @@ public class HashPayloadPcapReader extends PcapReader {
 	}
 
 	@Override
+	protected boolean isReassemble() {
+		return true;
+	}
+
+	@Override
+	protected boolean isPush() {
+		return false;
+	}
+
+	@Override
 	protected void processPacketPayload(Packet packet, byte[] payload) {
 		if (payload.length > 0) {
 			packet.put(HashPayloadPacket.PAYLOAD_SHA1_HASH, Hashing.sha1().hashBytes(payload).toString());

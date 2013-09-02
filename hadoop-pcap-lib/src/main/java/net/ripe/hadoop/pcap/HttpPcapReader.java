@@ -52,6 +52,16 @@ public class HttpPcapReader extends PcapReader{
 	}
 
 	@Override
+	protected boolean isReassemble() {
+		return true;
+	}
+
+	@Override
+	protected boolean isPush() {
+		return false;
+	}
+
+	@Override
 	protected void processPacketPayload(Packet packet, final byte[] payload) {
 		HttpPacket httpPacket = (HttpPacket)packet;
 		Integer srcPort = (Integer)packet.get(Packet.SRC_PORT);
