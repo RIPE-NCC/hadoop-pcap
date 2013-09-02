@@ -45,7 +45,7 @@ public class DnsPcapReader extends PcapReader {
 
 		if (DNS_PORT == (Integer)packet.get(Packet.SRC_PORT) || DNS_PORT == (Integer)packet.get(Packet.DST_PORT)) {
 			if (PROTOCOL_TCP.equals(packet.get(Packet.PROTOCOL)) &&
-			    packet.containsKey(Packet.REASSEMBLED_FRAGMENTS)) // TODO Support DNS responses with multiple messages (as used for XFRs)
+			    payload.length > 2) // TODO Support DNS responses with multiple messages (as used for XFRs)
 				payload = Arrays.copyOfRange(payload, 2, payload.length); // First two bytes denote the size of the DNS message, ignore them
 			try {
 				Message msg = new Message(payload);
