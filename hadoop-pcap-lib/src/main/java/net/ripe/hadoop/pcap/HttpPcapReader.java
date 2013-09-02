@@ -67,8 +67,8 @@ public class HttpPcapReader extends PcapReader{
 		Integer srcPort = (Integer)packet.get(Packet.SRC_PORT);
 		Integer dstPort = (Integer)packet.get(Packet.DST_PORT);
 		if ((HTTP_PORT == srcPort || HTTP_PORT == dstPort) &&
-		    packet.containsKey(Packet.REASSEMBLED_FRAGMENTS)) {
-
+		    packet.containsKey(Packet.REASSEMBLED_FRAGMENTS) &&
+		    PROTOCOL_TCP.equals(packet.get(Packet.PROTOCOL))) {
 	        final SessionInputBuffer inBuf = new AbstractSessionInputBuffer() {
 	        	{
 					init(new ByteArrayInputStream(payload), 1024, params);
