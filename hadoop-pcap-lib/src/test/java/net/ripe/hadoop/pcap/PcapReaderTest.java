@@ -5,12 +5,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import net.ripe.hadoop.pcap.PcapReader;
+import net.ripe.hadoop.pcap.packet.Packet;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Iterables;
 
 public class PcapReaderTest {
 	PcapReader reader;
@@ -134,5 +138,69 @@ public class PcapReaderTest {
 	public void findIPStartLOOP() {
 		PcapReader xreader = new PcapReader(PcapReader.LinkType.LOOP);
 		assertEquals(4, xreader.findIPStart(null));
+	}
+
+	@Test
+	public void assembled() throws IOException {
+		for (String file : new String[] { "src/test/resources/tcp-stream-v4.pcap", "src/test/resources/tcp-stream-v6.pcap" }) {
+			PcapReader reader = new PcapReader(new DataInputStream(new FileInputStream(file))) {
+				@Override
+				protected void processPacketPayload(Packet packet, byte[] payload) {
+					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_FRAGMENTS);
+					if (fragments != null) {
+						assertTrue(2 == fragments);
+						assertEquals("part1\npart2\n", new String(payload));
+					}
+				}
+	
+				@Override
+				protected boolean isReassemble() {
+					return true;
+				}
+	
+				@Override
+				protected boolean isPush() {
+					return false;
+				}
+			};
+			assertEquals(10, Iterables.size(reader));
+		}
+	}
+
+	@Test
+	public void assembledWithPush() throws IOException {
+		for (String file : new String[] { "src/test/resources/tcp-stream-v4.pcap", "src/test/resources/tcp-stream-v6.pcap" }) {
+			PcapReader reader = new PcapReader(new DataInputStream(new FileInputStream(file))) {
+				public int counter = 1;
+	
+				@Override
+				protected void processPacketPayload(Packet packet, byte[] payload) {
+					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_FRAGMENTS);
+					if (fragments != null) {
+						assertTrue(1 == fragments);
+						switch (counter) {
+							case 1:
+								assertEquals("part1\n", new String(payload));
+								break;
+							case 2:
+								assertEquals("part2\n", new String(payload));
+								break;
+						}
+						counter++;
+					}
+				}
+	
+				@Override
+				protected boolean isReassemble() {
+					return true;
+				}
+	
+				@Override
+				protected boolean isPush() {
+					return true;
+				}
+			};
+			assertEquals(10, Iterables.size(reader));
+		}
 	}
 }

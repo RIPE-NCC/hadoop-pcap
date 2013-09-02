@@ -3,6 +3,7 @@ package net.ripe.hadoop.pcap;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -10,6 +11,13 @@ import java.math.MathContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.common.primitives.Bytes;
+
+import net.ripe.hadoop.pcap.packet.Flow;
 import net.ripe.hadoop.pcap.packet.Packet;
 
 public class PcapReader implements Iterable<Packet> {
@@ -30,8 +38,11 @@ public class PcapReader implements Iterable<Packet> {
 	public static final int ETHERNET_TYPE_8021Q = 0x8100;
 	public static final int SLL_HEADER_BASE_SIZE = 10; // SLL stands for Linux cooked-mode capture
 	public static final int SLL_ADDRESS_LENGTH_OFFSET = 4; // relative to SLL header
+	public static final int IPV6_HEADER_SIZE = 40;
 	public static final int IP_VHL_OFFSET = 0;	// relative to start of IP header
-	public static final int IP_TTL_OFFSET = 8;	// relative to start of IP header
+	public static final int IP_TTL_OFFSET = 8;	// relative to start of IP header	
+	public static final int IP_TOTAL_LEN_OFFSET = 2;	// relative to start of IP header
+	public static final int IPV6_PAYLOAD_LEN_OFFSET = 4; // relative to start of IP header
 	public static final int IPV6_HOPLIMIT_OFFSET = 7; // relative to start of IP header
 	public static final int IP_PROTOCOL_OFFSET = 9;	// relative to start of IP header
 	public static final int IPV6_NEXTHEADER_OFFSET = 6; // relative to start of IP header
@@ -59,6 +70,8 @@ public class PcapReader implements Iterable<Packet> {
 	
 	//To read reversed-endian PCAPs; the header is the only part that switches
 	private boolean reverseHeaderByteOrder = false;
+
+	private Multimap<Flow, SequencePayload> flows = TreeMultimap.create();
 
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
@@ -161,17 +174,52 @@ public class PcapReader implements Iterable<Packet> {
 		packet.put(Packet.IP_VERSION, ipProtocolHeaderVersion);
 
 		if (ipProtocolHeaderVersion == 4 || ipProtocolHeaderVersion == 6) {
-			if (ipProtocolHeaderVersion == 4)
+			int ipHeaderLen = getInternetProtocolHeaderLength(packetData, ipProtocolHeaderVersion, ipStart);
+			packet.put(Packet.IP_HEADER_LENGTH, ipHeaderLen);
+
+			int totalLength = 0;
+			if (ipProtocolHeaderVersion == 4) {
 				buildInternetProtocolV4Packet(packet, packetData, ipStart);
-			else if (ipProtocolHeaderVersion == 6)
+				totalLength = PcapReaderUtil.convertShort(packetData, ipStart + IP_TOTAL_LEN_OFFSET);
+			} else if (ipProtocolHeaderVersion == 6) {
 				buildInternetProtocolV6Packet(packet, packetData, ipStart);
+				int payloadLength = PcapReaderUtil.convertShort(packetData, ipStart + IPV6_PAYLOAD_LEN_OFFSET);
+				totalLength = payloadLength + IPV6_HEADER_SIZE;
+			}
 
 			String protocol = (String)packet.get(Packet.PROTOCOL);
 			if (PROTOCOL_UDP == protocol || 
 			    PROTOCOL_TCP == protocol) {
 	
-				int ipHeaderLen = getInternetProtocolHeaderLength(packetData, ipProtocolHeaderVersion, ipStart);
-				byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData, ipProtocolHeaderVersion, ipStart, ipHeaderLen);
+				byte[] packetPayload = buildTcpAndUdpPacket(packet, packetData, ipProtocolHeaderVersion, ipStart, ipHeaderLen, totalLength);
+
+				if (isReassemble() && PROTOCOL_TCP == protocol) {
+					Flow flow = packet.getFlow();
+
+					if (packetPayload.length > 0) {
+						Long seq = (Long)packet.get(Packet.TCP_SEQ);
+						SequencePayload sequencePayload = new SequencePayload(seq, packetPayload);
+						flows.put(flow, sequencePayload);
+					}
+
+					if ((Boolean)packet.get(Packet.TCP_FLAG_FIN) || (isPush() && (Boolean)packet.get(Packet.TCP_FLAG_PSH))) {
+						Collection<SequencePayload> fragments = flows.removeAll(flow);
+						if (fragments != null && fragments.size() > 0) {
+							packet.put(Packet.REASSEMBLED_FRAGMENTS, fragments.size());
+							packetPayload = new byte[0];
+							SequencePayload prev = null;
+							for (SequencePayload seqPayload : fragments) {
+								if (prev != null && !seqPayload.linked(prev)) {
+									LOG.warn("Broken sequence chain between " + seqPayload + " and " + prev + ". Returning empty payload.");
+									packetPayload = new byte[0];
+									break;
+								}
+								packetPayload = Bytes.concat(packetPayload, seqPayload.payload);
+								prev = seqPayload;
+							}
+						}
+					}
+				}
 				processPacketPayload(packet, packetPayload);
 			}
 		}
@@ -181,6 +229,14 @@ public class PcapReader implements Iterable<Packet> {
 
 	protected Packet createPacket() {
 		return new Packet();
+	}
+
+	protected boolean isReassemble() {
+		return true;
+	}
+
+	protected boolean isPush() {
+		return false;
 	}
 
 	protected void processPacketPayload(Packet packet, byte[] payload) {}
@@ -293,12 +349,11 @@ public class PcapReader implements Iterable<Packet> {
 	 * packetData is the entire layer 2 packet read from pcap
 	 * ipStart is the start of the IP packet in packetData
 	 */
-	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipProtocolHeaderVersion, int ipStart, int ipHeaderLen) {
+	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipProtocolHeaderVersion, int ipStart, int ipHeaderLen, int totalLength) {
 		packet.put(Packet.SRC_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_SRC_PORT_OFFSET));
 		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_DST_PORT_OFFSET));
 
 		int tcpOrUdpHeaderSize;
-		int payloadLength = 0;
 		final String protocol = (String)packet.get(Packet.PROTOCOL);
 		if (PROTOCOL_UDP.equals(protocol)) {
 			tcpOrUdpHeaderSize = UDP_HEADER_SIZE;
@@ -312,16 +367,13 @@ public class PcapReader implements Iterable<Packet> {
 
 			int udpLen = getUdpLength(packetData, ipStart, ipHeaderLen);
 			packet.put(Packet.UDP_LENGTH, udpLen);
-
-			payloadLength = udpLen - UDP_HEADER_SIZE; // UDP header size is 8
 		} else if (PROTOCOL_TCP.equals(protocol)) {
 			tcpOrUdpHeaderSize = getTcpHeaderLength(packetData, ipStart + ipHeaderLen);
-                        
-			//Store the sequence and acknowledgement numbers --M
+			packet.put(Packet.TCP_HEADER_LENGTH, tcpOrUdpHeaderSize);
 
-                        packet.put(Packet.TCP_SEQ,PcapReaderUtil.convertUnsignedInt(packetData,ipStart+ ipHeaderLen + PROTOCOL_HEADER_TCP_SEQ_OFFSET));
-                        packet.put(Packet.TCP_ACK,PcapReaderUtil.convertUnsignedInt(packetData,ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_ACK_OFFSET));
-
+			// Store the sequence and acknowledgement numbers --M
+			packet.put(Packet.TCP_SEQ, PcapReaderUtil.convertUnsignedInt(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_SEQ_OFFSET));
+			packet.put(Packet.TCP_ACK, PcapReaderUtil.convertUnsignedInt(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_TCP_ACK_OFFSET));
 
 			// Flags stretch two bytes starting at the TCP header offset
 			int flags = PcapReaderUtil.convertShort(new byte[] { packetData[ipStart + ipHeaderLen + TCP_HEADER_DATA_OFFSET],
@@ -336,12 +388,12 @@ public class PcapReader implements Iterable<Packet> {
 			packet.put(Packet.TCP_FLAG_RST, (flags & 0x4)  == 0 ? false : true);
 			packet.put(Packet.TCP_FLAG_SYN, (flags & 0x2)  == 0 ? false : true);
 			packet.put(Packet.TCP_FLAG_FIN, (flags & 0x1)  == 0 ? false : true);
-			payloadLength = packetData.length - (ipStart + ipHeaderLen + tcpOrUdpHeaderSize);
 		} else {
 			return null;
 		}
 
 		int payloadDataStart = ipStart + ipHeaderLen + tcpOrUdpHeaderSize;
+		int payloadLength = totalLength - ipHeaderLen - tcpOrUdpHeaderSize;
 		byte[] data = readPayload(packetData, payloadDataStart, payloadLength);
 		packet.put(Packet.LEN, data.length);
 		return data;
@@ -403,6 +455,9 @@ public class PcapReader implements Iterable<Packet> {
 			fetchNext();
 			if (next != null)
 				return true;
+			int remainingFlows = flows.size();
+			if (remainingFlows > 0)
+				LOG.warn("Still " + remainingFlows + " flows queued. Missing packets to finish assembly?");
 			return false;
 		}
 
@@ -419,6 +474,38 @@ public class PcapReader implements Iterable<Packet> {
 		@Override
 		public void remove() {
 			// Not supported
+		}
+	}
+
+	private class SequencePayload implements Comparable<SequencePayload> {
+		private Long seq;
+		private byte[] payload;
+
+		public SequencePayload(Long seq, byte[] payload) {
+			this.seq = seq;
+			this.payload = payload;
+		}
+
+		@Override
+		public int compareTo(SequencePayload o) {
+			return ComparisonChain.start().compare(seq, o.seq)
+			                              .compare(payload.length, o.payload.length)
+			                              .result();
+		}
+
+		public boolean linked(SequencePayload o) {
+			if ((seq + payload.length) == o.seq)
+				return true;
+			if ((o.seq + o.payload.length) == seq)
+				return true;
+			return false;
+		}
+
+		@Override
+		public String toString() {
+			return Objects.toStringHelper(this.getClass()).add("seq", seq)
+			                                              .add("len", payload.length)
+			                                              .toString();
 		}
 	}
 }

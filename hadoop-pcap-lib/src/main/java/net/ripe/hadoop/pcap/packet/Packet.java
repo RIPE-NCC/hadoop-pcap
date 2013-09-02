@@ -11,11 +11,13 @@ public class Packet extends HashMap<String, Object> {
     public static final String TS_USEC = "ts_usec";
 	public static final String TTL = "ttl";
 	public static final String IP_VERSION = "ip_version";	
+	public static final String IP_HEADER_LENGTH = "ip_header_length";	
 	public static final String PROTOCOL = "protocol";
 	public static final String SRC = "src";
 	public static final String DST = "dst";
 	public static final String SRC_PORT = "src_port";
 	public static final String DST_PORT = "dst_port";
+	public static final String TCP_HEADER_LENGTH = "tcp_header_length";
 	public static final String TCP_SEQ = "tcp_seq";
 	public static final String TCP_ACK = "tcp_ack";
 	public static final String LEN = "len";
@@ -30,6 +32,16 @@ public class Packet extends HashMap<String, Object> {
 	public static final String TCP_FLAG_RST = "tcp_flag_rst";
 	public static final String TCP_FLAG_SYN = "tcp_flag_syn";
 	public static final String TCP_FLAG_FIN = "tcp_flag_fin";
+	public static final String REASSEMBLED_FRAGMENTS = "reassembled_fragments";
+
+	public Flow getFlow() {
+		String src = (String)get(Packet.SRC);
+		Integer srcPort = (Integer)get(Packet.SRC_PORT);
+		String dst = (String)get(Packet.DST);
+		Integer dstPort = (Integer)get(Packet.DST_PORT);
+		String protocol = (String)get(Packet.PROTOCOL);
+		return new Flow(src, srcPort, dst, dstPort, protocol);
+	}
 
 	@Override
 	public String toString() {
