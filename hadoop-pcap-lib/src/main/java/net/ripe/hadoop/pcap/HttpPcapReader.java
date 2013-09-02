@@ -1,11 +1,33 @@
 package net.ripe.hadoop.pcap;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.LinkedList;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.Header;
+import org.apache.http.HttpClientConnection;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestFactory;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpResponseFactory;
+import org.apache.http.impl.DefaultHttpRequestFactory;
+import org.apache.http.impl.DefaultHttpResponseFactory;
+import org.apache.http.impl.conn.DefaultClientConnection;
+import org.apache.http.impl.io.AbstractSessionInputBuffer;
+import org.apache.http.impl.io.AbstractSessionOutputBuffer;
+import org.apache.http.impl.io.DefaultHttpRequestParser;
+import org.apache.http.impl.io.DefaultHttpResponseParser;
+import org.apache.http.io.HttpMessageParser;
+import org.apache.http.io.SessionInputBuffer;
+import org.apache.http.io.SessionOutputBuffer;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+
+import com.google.common.base.Joiner;
 
 import net.ripe.hadoop.pcap.packet.HttpPacket;
 import net.ripe.hadoop.pcap.packet.Packet;
@@ -14,6 +36,11 @@ public class HttpPcapReader extends PcapReader{
 	public static final Log LOG = LogFactory.getLog(HttpPcapReader.class);
 
 	public static final int HTTP_PORT = 80;
+	public static final String HEADER_PREFIX = "header_";
+
+	private HttpParams params = new BasicHttpParams();
+	private HttpRequestFactory reqFactory = new DefaultHttpRequestFactory();
+	private HttpResponseFactory respFactory = new DefaultHttpResponseFactory();
 
 	public HttpPcapReader(DataInputStream is) throws IOException {
 		super(is);
@@ -21,33 +48,73 @@ public class HttpPcapReader extends PcapReader{
 
 	@Override
 	protected Packet createPacket() {
-		LOG.debug("--- createPacket ---");
 		return new HttpPacket();
 	}
 
-	//Only process http packages that contain value in payload
 	@Override
-	protected void processPacketPayload(Packet packet, byte[] payload) {
-		
+	protected void processPacketPayload(Packet packet, final byte[] payload) {
 		HttpPacket httpPacket = (HttpPacket)packet;
-		String s = new String(payload);
-		
-		if ((HTTP_PORT == (Integer)packet.get(Packet.DST_PORT)) && (PROTOCOL_TCP == (String)packet.get(Packet.PROTOCOL)) && (!(s.isEmpty()))){
-			try {	
-				s = s.replace("\n", "").replace("\r", "");
-				httpPacket.put(HttpPacket.GET, StringUtils.substringBetween( s, "GET ", "Host"));
-				httpPacket.put(HttpPacket.HOST, StringUtils.substringBetween( s, "Host: ", "User-Agent"));
-				httpPacket.put(HttpPacket.USER_AGENT, StringUtils.substringBetween( s, "User-Agent: ", "Accept"));
-				httpPacket.put(HttpPacket.ACCEPT, StringUtils.substringBetween( s, "Accept: ", "Accept-Language"));
-				httpPacket.put(HttpPacket.ACCEPT_LANGUAGE, StringUtils.substringBetween( s, "Accept-Language: ", "Accept-Encoding"));
-				httpPacket.put(HttpPacket.ACCEPT_ENCODING, StringUtils.substringBetween( s, "Accept-Encoding: ", "Accept-Charset"));
-				httpPacket.put(HttpPacket.ACCEPT_CHARSET, StringUtils.substringBetween( s, "Accept-Charset: ", "Keep-Alive"));
-				httpPacket.put(HttpPacket.KEEP_ALIVE, StringUtils.substringBetween( s, "Keep-Alive: ", "Connection"));
-				httpPacket.put(HttpPacket.CONNECTION, StringUtils.substringBetween( s, "Connection: ", "Referer"));
-				httpPacket.put(HttpPacket.REFERER, StringUtils.substringBetween( s, "Referer: ", ""));
-			} catch (Exception e) {
-				// If we cannot decode a http packet we ignore it
-			}
+		Integer srcPort = (Integer)packet.get(Packet.SRC_PORT);
+		Integer dstPort = (Integer)packet.get(Packet.DST_PORT);
+		if ((HTTP_PORT == srcPort || HTTP_PORT == dstPort) &&
+		    packet.containsKey(Packet.REASSEMBLED_FRAGMENTS)) {
+
+	        final SessionInputBuffer inBuf = new AbstractSessionInputBuffer() {
+	        	{
+					init(new ByteArrayInputStream(payload), 1024, params);
+				}
+
+				@Override
+				public boolean isDataAvailable(int timeout) throws IOException {
+					return true;
+				}
+            };
+            final SessionOutputBuffer outBuf = new AbstractSessionOutputBuffer() {};
+
+            if (HTTP_PORT == srcPort) {
+		        HttpMessageParser<HttpResponse> parser = new DefaultHttpResponseParser(inBuf, null, respFactory, params);
+
+		        HttpClientConnection conn = new DefaultClientConnection() {
+		        	{
+		        		init(inBuf, outBuf, params);
+		        	}
+
+					@Override
+					protected void assertNotOpen() {}
+
+					@Override
+					protected void assertOpen() {}
+		        };
+	
+		        try {
+		        	HttpResponse response = parser.parse();
+		        	conn.receiveResponseEntity(response);
+		        	propagateHeaders(httpPacket, response.getAllHeaders());
+				} catch (IOException e) {
+					LOG.error("IOException when decoding HTTP response", e);
+				} catch (HttpException e) {
+					LOG.error("HttpException when decoding HTTP response", e);
+				}
+            } else if (HTTP_PORT == dstPort) {
+		        HttpMessageParser<HttpRequest> parser = new DefaultHttpRequestParser(inBuf, null, reqFactory, params);
+		        try {
+		        	HttpRequest request = parser.parse();
+		        	propagateHeaders(httpPacket, request.getAllHeaders());
+				} catch (IOException e) {
+					LOG.error("IOException when decoding HTTP request", e);
+				} catch (HttpException e) {
+					LOG.error("HttpException when decoding HTTP request", e);
+				}
+            }
 		}
+	}
+
+	private void propagateHeaders(HttpPacket packet, Header[] headers) {
+		LinkedList<String> headerKeys = new LinkedList<String>();
+		for (Header header : headers) {
+			String headerKey = HEADER_PREFIX + header.getName().toLowerCase();
+			packet.put(headerKey, header.getValue());
+		}
+		packet.put(HttpPacket.HTTP_HEADERS, Joiner.on(',').join(headerKeys));
 	}
 }
