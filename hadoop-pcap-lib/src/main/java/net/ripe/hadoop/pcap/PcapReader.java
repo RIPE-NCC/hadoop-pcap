@@ -73,11 +73,15 @@ public class PcapReader implements Iterable<Packet> {
 
 	private Multimap<Flow, SequencePayload> flows = TreeMultimap.create();
 
+	public byte[] pcapHeader;
+	public byte[] pcapPacketHeader;
+	public byte[] packetData;
+
 	public PcapReader(DataInputStream is) throws IOException {
 		this.is = is;
 		iterator = new PacketIterator();
 
-		byte[] pcapHeader = new byte[HEADER_SIZE];
+		pcapHeader = new byte[HEADER_SIZE];
 		if (!readBytes(pcapHeader)) {
 			//
 			// This special check for EOF is because we don't want
@@ -144,7 +148,7 @@ public class PcapReader implements Iterable<Packet> {
 	}
 
 	private Packet nextPacket() {
-		byte[] pcapPacketHeader = new byte[PACKET_HEADER_SIZE];
+		pcapPacketHeader = new byte[PACKET_HEADER_SIZE];
 		if (!readBytes(pcapPacketHeader))
 			return null;
 
@@ -162,7 +166,7 @@ public class PcapReader implements Iterable<Packet> {
         packet.put(Packet.TS_USEC, packetTimestampUsec);
 
 		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
-		byte[] packetData = new byte[(int)packetSize];
+		packetData = new byte[(int)packetSize];
 		if (!readBytes(packetData))
 			return packet;
 
