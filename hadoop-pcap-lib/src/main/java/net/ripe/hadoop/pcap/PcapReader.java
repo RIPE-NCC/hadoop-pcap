@@ -396,6 +396,11 @@ public class PcapReader implements Iterable<Packet> {
 			return null;
 		}
 
+        if (payloadLength < 0) {
+            LOG.warn("Bad packet at " + packet.get(Packet.TS_USEC) );
+            return null;
+        }
+
 		int payloadDataStart = ipStart + ipHeaderLen + tcpOrUdpHeaderSize;
 		int payloadLength = totalLength - ipHeaderLen - tcpOrUdpHeaderSize;
 		byte[] data = readPayload(packetData, payloadDataStart, payloadLength);
