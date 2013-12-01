@@ -53,4 +53,11 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<distributionManagement>
+		<repository>
+			<id>bintray</id>
+			<url>https://api.bintray.com/maven/hadoop-pcap/hadoop-pcap/hadoop-pcap-lib</url>
+		</repository>
+	</distributionManagement>
 </project>
