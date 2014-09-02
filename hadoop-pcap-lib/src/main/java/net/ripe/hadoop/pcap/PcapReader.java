@@ -411,6 +411,10 @@ public class PcapReader implements Iterable<Packet> {
 	 * @return payload as byte[]
 	 */
 	protected byte[] readPayload(byte[] packetData, int payloadDataStart, int payloadLength) {
+		if (payloadLength < 0) {
+			LOG.warn("Malformed packet - negative payload length. Returning empty payload.");
+			return new byte[0];
+		}
 		if (payloadDataStart > packetData.length) {
 			LOG.warn("Payload start (" + payloadDataStart + ") is larger than packet data (" + packetData.length + "). Returning empty payload.");
 			return new byte[0];
