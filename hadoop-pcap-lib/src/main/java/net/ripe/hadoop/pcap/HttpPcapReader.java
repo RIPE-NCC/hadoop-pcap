@@ -123,6 +123,7 @@ public class HttpPcapReader extends PcapReader{
 		LinkedList<String> headerKeys = new LinkedList<String>();
 		for (Header header : headers) {
 			String headerKey = HEADER_PREFIX + header.getName().toLowerCase();
+			headerKeys.add(headerKey);
 			packet.put(headerKey, header.getValue());
 		}
 		packet.put(HttpPacket.HTTP_HEADERS, Joiner.on(',').join(headerKeys));
