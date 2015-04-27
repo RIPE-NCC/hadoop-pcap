@@ -163,7 +163,7 @@ public class PcapReader implements Iterable<Packet> {
         // Prepare the timestamp with a BigDecimal to include microseconds
         BigDecimal packetTimestampUsec = new BigDecimal(packetTimestamp
         + (double) packetTimestampMicros/1000000, ts_mc);
-        packet.put(Packet.TS_USEC, packetTimestampUsec);
+        packet.put(Packet.TS_USEC, packetTimestampUsec.longValue());
 
 		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
 		packetData = new byte[(int)packetSize];

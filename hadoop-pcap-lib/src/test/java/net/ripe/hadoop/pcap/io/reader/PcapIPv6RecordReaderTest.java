@@ -91,10 +91,5 @@ public class PcapIPv6RecordReaderTest {
 
 		@Override
 		public void progress() {}
-
-		@Override
-		public float getProgress() {
-			return 0;
-		}
 	}
 }
