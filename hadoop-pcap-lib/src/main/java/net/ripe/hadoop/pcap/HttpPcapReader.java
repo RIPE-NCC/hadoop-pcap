@@ -52,7 +52,12 @@ public class HttpPcapReader extends PcapReader{
 	}
 
 	@Override
-	protected boolean isReassemble() {
+	protected boolean isReassembleDatagram() {
+		return true;
+	}
+
+	@Override
+	protected boolean isReassembleTcp() {
 		return true;
 	}
 
@@ -63,12 +68,16 @@ public class HttpPcapReader extends PcapReader{
 
 	@Override
 	protected void processPacketPayload(Packet packet, final byte[] payload) {
+		String protocol = (String)packet.get(Packet.PROTOCOL);
+
+		if (!PcapReader.PROTOCOL_TCP.equals(protocol))
+			return;
+
 		HttpPacket httpPacket = (HttpPacket)packet;
 		Integer srcPort = (Integer)packet.get(Packet.SRC_PORT);
 		Integer dstPort = (Integer)packet.get(Packet.DST_PORT);
 		if ((HTTP_PORT == srcPort || HTTP_PORT == dstPort) &&
-		    packet.containsKey(Packet.REASSEMBLED_FRAGMENTS) &&
-		    PROTOCOL_TCP.equals(packet.get(Packet.PROTOCOL))) {
+		    packet.containsKey(Packet.REASSEMBLED_TCP_FRAGMENTS)) {
 	        final SessionInputBuffer inBuf = new AbstractSessionInputBuffer() {
 	        	{
 					init(new ByteArrayInputStream(payload), 1024, params);

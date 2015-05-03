@@ -12,9 +12,16 @@ public class Packet extends HashMap<String, Object> {
 	public static final String TTL = "ttl";
 	public static final String IP_VERSION = "ip_version";	
 	public static final String IP_HEADER_LENGTH = "ip_header_length";	
+	public static final String IP_FLAGS_DF = "ip_flags_df";
+	public static final String IP_FLAGS_MF = "ip_flags_mf";
+	public static final String IPV6_FLAGS_M = "ipv6_flags_m";
+	public static final String FRAGMENT_OFFSET = "fragment_offset";
+	public static final String FRAGMENT = "fragment";
+	public static final String LAST_FRAGMENT = "last_fragment";
 	public static final String PROTOCOL = "protocol";
 	public static final String SRC = "src";
 	public static final String DST = "dst";
+	public static final String ID = "id";
 	public static final String SRC_PORT = "src_port";
 	public static final String DST_PORT = "dst_port";
 	public static final String TCP_HEADER_LENGTH = "tcp_header_length";
@@ -32,7 +39,8 @@ public class Packet extends HashMap<String, Object> {
 	public static final String TCP_FLAG_RST = "tcp_flag_rst";
 	public static final String TCP_FLAG_SYN = "tcp_flag_syn";
 	public static final String TCP_FLAG_FIN = "tcp_flag_fin";
-	public static final String REASSEMBLED_FRAGMENTS = "reassembled_fragments";
+	public static final String REASSEMBLED_TCP_FRAGMENTS = "reassembled_tcp_fragments";
+	public static final String REASSEMBLED_DATAGRAM_FRAGMENTS = "reassembled_datagram_fragments";
 
 	public Flow getFlow() {
 		String src = (String)get(Packet.SRC);
@@ -41,6 +49,14 @@ public class Packet extends HashMap<String, Object> {
 		Integer dstPort = (Integer)get(Packet.DST_PORT);
 		String protocol = (String)get(Packet.PROTOCOL);
 		return new Flow(src, srcPort, dst, dstPort, protocol);
+	}
+
+	public Datagram getDatagram() {
+		String src = (String)get(Packet.SRC);
+		String dst = (String)get(Packet.DST);
+		Long id = (Long)get(Packet.ID);
+		String protocol = (String)get(Packet.PROTOCOL);
+		return new Datagram(src, dst, id, protocol);
 	}
 
 	@Override

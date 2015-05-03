@@ -14,6 +14,7 @@ public class PcapReaderUtil {
 		protocols.put(1, PcapReader.PROTOCOL_ICMP);
 		protocols.put(6, PcapReader.PROTOCOL_TCP);
 		protocols.put(17, PcapReader.PROTOCOL_UDP);
+		protocols.put(44, PcapReader.PROTOCOL_FRAGMENT); // Using IPv4 fragment protocol number across protocols (see http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)
 	}
 
 	public static long convertInt(byte[] data) {

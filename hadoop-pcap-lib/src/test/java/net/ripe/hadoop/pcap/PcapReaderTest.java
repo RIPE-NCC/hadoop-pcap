@@ -146,7 +146,7 @@ public class PcapReaderTest {
 			PcapReader reader = new PcapReader(new DataInputStream(new FileInputStream(file))) {
 				@Override
 				protected void processPacketPayload(Packet packet, byte[] payload) {
-					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_FRAGMENTS);
+					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_TCP_FRAGMENTS);
 					if (fragments != null) {
 						assertTrue(2 == fragments);
 						assertEquals("part1\npart2\n", new String(payload));
@@ -154,7 +154,7 @@ public class PcapReaderTest {
 				}
 	
 				@Override
-				protected boolean isReassemble() {
+				protected boolean isReassembleTcp() {
 					return true;
 				}
 	
@@ -175,7 +175,7 @@ public class PcapReaderTest {
 	
 				@Override
 				protected void processPacketPayload(Packet packet, byte[] payload) {
-					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_FRAGMENTS);
+					Integer fragments = (Integer)packet.get(Packet.REASSEMBLED_TCP_FRAGMENTS);
 					if (fragments != null) {
 						assertTrue(1 == fragments);
 						switch (counter) {
@@ -191,7 +191,7 @@ public class PcapReaderTest {
 				}
 	
 				@Override
-				protected boolean isReassemble() {
+				protected boolean isReassembleTcp() {
 					return true;
 				}
 	

@@ -19,7 +19,12 @@ public class HashPayloadPcapReader extends PcapReader {
 	}
 
 	@Override
-	protected boolean isReassemble() {
+	protected boolean isReassembleDatagram() {
+		return true;
+	}
+
+	@Override
+	protected boolean isReassembleTcp() {
 		return true;
 	}
 

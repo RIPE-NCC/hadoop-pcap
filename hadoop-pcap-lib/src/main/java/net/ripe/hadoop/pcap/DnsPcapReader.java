@@ -30,7 +30,12 @@ public class DnsPcapReader extends PcapReader {
 	}
 
 	@Override
-	protected boolean isReassemble() {
+	protected boolean isReassembleDatagram() {
+		return true;
+	}
+
+	@Override
+	protected boolean isReassembleTcp() {
 		return true;
 	}
 
@@ -41,10 +46,15 @@ public class DnsPcapReader extends PcapReader {
 
 	@Override
 	protected void processPacketPayload(Packet packet, byte[] payload) {
+		String protocol = (String)packet.get(Packet.PROTOCOL);
+
+		if (!PcapReader.PROTOCOL_UDP.equals(protocol) && !PcapReader.PROTOCOL_TCP.equals(protocol))
+			return;
+
 		DnsPacket dnsPacket = (DnsPacket)packet;
 
 		if (DNS_PORT == (Integer)packet.get(Packet.SRC_PORT) || DNS_PORT == (Integer)packet.get(Packet.DST_PORT)) {
-			if (PROTOCOL_TCP.equals(packet.get(Packet.PROTOCOL)) &&
+			if (PROTOCOL_TCP.equals(protocol) &&
 			    payload.length > 2) // TODO Support DNS responses with multiple messages (as used for XFRs)
 				payload = Arrays.copyOfRange(payload, 2, payload.length); // First two bytes denote the size of the DNS message, ignore them
 			try {
