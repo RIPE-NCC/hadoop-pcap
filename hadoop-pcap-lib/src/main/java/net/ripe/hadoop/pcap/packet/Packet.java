@@ -7,8 +7,8 @@ public class Packet extends HashMap<String, Object> {
 	private static final long serialVersionUID = 8723206921174160146L;
 
 	public static final String TIMESTAMP = "ts";
-	public static final String TIMESTAMP_MICROS = "tsmicros";
-    public static final String TS_USEC = "ts_usec";
+    public static final String TIMESTAMP_USEC = "ts_usec";
+	public static final String TIMESTAMP_MICROS = "ts_micros";
 	public static final String TTL = "ttl";
 	public static final String IP_VERSION = "ip_version";	
 	public static final String IP_HEADER_LENGTH = "ip_header_length";	

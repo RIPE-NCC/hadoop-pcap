@@ -74,8 +74,8 @@ public class PcapReader implements Iterable<Packet> {
 	private LinkType linkType;
 	private long snapLen;
 	private boolean caughtEOF = false;
-    // MathContext for BigDecimal to preserve only 16 decimal digits
-    private MathContext ts_mc = new MathContext(16);
+
+    private MathContext tsUsecMc = new MathContext(16);
 	
 	//To read reversed-endian PCAPs; the header is the only part that switches
 	private boolean reverseHeaderByteOrder = false;
@@ -170,10 +170,8 @@ public class PcapReader implements Iterable<Packet> {
 		long packetTimestampMicros = PcapReaderUtil.convertInt(pcapPacketHeader, TIMESTAMP_MICROS_OFFSET, reverseHeaderByteOrder);
 		packet.put(Packet.TIMESTAMP_MICROS, packetTimestampMicros);
 
-        // Prepare the timestamp with a BigDecimal to include microseconds
-        BigDecimal packetTimestampUsec = new BigDecimal(packetTimestamp
-        + (double) packetTimestampMicros/1000000, ts_mc);
-        packet.put(Packet.TS_USEC, packetTimestampUsec.longValue());
+        BigDecimal packetTimestampUsec = new BigDecimal(packetTimestamp + packetTimestampMicros / 1000000.0, tsUsecMc);
+        packet.put(Packet.TIMESTAMP_USEC, packetTimestampUsec.doubleValue());
 
 		long packetSize = PcapReaderUtil.convertInt(pcapPacketHeader, CAP_LEN_OFFSET, reverseHeaderByteOrder);
 		packetData = new byte[(int)packetSize];
