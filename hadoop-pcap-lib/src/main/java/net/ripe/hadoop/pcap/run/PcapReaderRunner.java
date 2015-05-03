@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.zip.GZIPInputStream;
 
+import com.google.common.base.Joiner;
+
 import net.ripe.hadoop.pcap.PcapReader;
 import net.ripe.hadoop.pcap.packet.Packet;
 
@@ -28,6 +30,8 @@ public class PcapReaderRunner {
 	}
 
 	public void run(String pcapReaderClass, String path) throws IOException {
+		Joiner.MapJoiner mapJoiner = Joiner.on('\n').withKeyValueSeparator(": ");
+
 		InputStream is = null;
 		try {
 			long packets = 0;
@@ -40,8 +44,9 @@ public class PcapReaderRunner {
 			PcapReader reader = initPcapReader(pcapReaderClass, new DataInputStream(is));
 	
 			for (Packet packet : reader) {
-				System.out.println("--- packet ---");
-				System.out.println(packet.toString());
+				System.out.println("--- Packet ---");
+				System.out.println(mapJoiner.join(packet));
+				System.out.println();
 				packets++;
 			}
 			System.out.println("=== STOP ===");
