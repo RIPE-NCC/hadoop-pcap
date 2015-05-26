@@ -30,7 +30,7 @@ public class PcapReaderRunner {
 	}
 
 	public void run(String pcapReaderClass, String path) throws IOException {
-		Joiner.MapJoiner mapJoiner = Joiner.on('\n').withKeyValueSeparator(": ");
+		Joiner.MapJoiner mapJoiner = Joiner.on('\n').withKeyValueSeparator(": ").useForNull("null");
 
 		InputStream is = null;
 		try {
