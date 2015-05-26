@@ -2,6 +2,7 @@ package net.ripe.hadoop.pcap.packet;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
 public class Datagram implements Comparable<Datagram> {
 	private String src;
@@ -19,10 +20,10 @@ public class Datagram implements Comparable<Datagram> {
 	@Override
 	public int compareTo(Datagram o) {
 		return ComparisonChain.start()
-		                      .compare(src, o.src)
-		                      .compare(dst, o.dst)
-		                      .compare(id, o.id)
-		                      .compare(protocol, o.protocol)
+		                      .compare(src, o.src, Ordering.natural().nullsLast())
+		                      .compare(dst, o.dst, Ordering.natural().nullsLast())
+		                      .compare(id, o.id, Ordering.natural().nullsLast())
+		                      .compare(protocol, o.protocol, Ordering.natural().nullsLast())
 		                      .result();
 	}
 

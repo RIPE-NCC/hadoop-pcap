@@ -2,6 +2,7 @@ package net.ripe.hadoop.pcap.packet;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
 public class Flow implements Comparable<Flow> {
 	private String src;
@@ -21,11 +22,11 @@ public class Flow implements Comparable<Flow> {
 	@Override
 	public int compareTo(Flow o) {
 		return ComparisonChain.start()
-		                      .compare(src, o.src)
-		                      .compare(srcPort, o.srcPort)
-		                      .compare(dst, o.dst)
-		                      .compare(dstPort, o.dstPort)
-		                      .compare(protocol, o.protocol)
+		                      .compare(src, o.src, Ordering.natural().nullsLast())
+		                      .compare(srcPort, o.srcPort, Ordering.natural().nullsLast())
+		                      .compare(dst, o.dst, Ordering.natural().nullsLast())
+		                      .compare(dstPort, o.dstPort, Ordering.natural().nullsLast())
+		                      .compare(protocol, o.protocol, Ordering.natural().nullsLast())
 		                      .result();
 	}
 
