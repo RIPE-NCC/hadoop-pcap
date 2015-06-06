@@ -23,7 +23,7 @@ You can use the following parameters to combine multiple input files into splits
 	SET net.ripe.hadoop.pcap.io.reader.class=net.ripe.hadoop.pcap.DnsPcapReader;
 
 	CREATE EXTERNAL TABLE pcaps (ts bigint,
-	                             ts_usec decimal,
+	                             ts_usec double,
 	                             protocol string,
 	                             src string,
 	                             src_port int,
