@@ -33,6 +33,7 @@ public class PcapInputFormat extends FileInputFormat<LongWritable, ObjectWritabl
 	public RecordReader<LongWritable, ObjectWritable> getRecordReader(InputSplit split, JobConf config, Reporter reporter) throws IOException {
 		FileSplit fileSplit = (FileSplit)split;
 		Path path = fileSplit.getPath();
+		LOG.info("Reading PCAP: " + path.toString());
 		long start = 0L;
 		long length = fileSplit.getLength();
 		return initPcapRecordReader(path, start, length, reporter, config);
