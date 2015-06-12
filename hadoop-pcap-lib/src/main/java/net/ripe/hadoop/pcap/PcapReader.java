@@ -210,19 +210,28 @@ public class PcapReader implements Iterable<Packet> {
 					if ((Boolean)packet.get(Packet.LAST_FRAGMENT)) {
 						Collection<DatagramPayload> datagramPayloads = datagrams.removeAll(datagram);
 						if (datagramPayloads != null && datagramPayloads.size() > 0) {
-							packet.put(Packet.REASSEMBLED_DATAGRAM_FRAGMENTS, datagramPayloads.size());
-							packetData = Arrays.copyOfRange(packetData, 0, ipStart + ipHeaderLen); // Start re-fragmented packet with header from current packet
-							totalLength = ipHeaderLen;
+							byte[] reassmbledPacketData = Arrays.copyOfRange(packetData, 0, ipStart + ipHeaderLen); // Start re-fragmented packet with header from current packet
+							int reassmbledTotalLength = ipHeaderLen;
+							int reassembledFragments = 0;
 							DatagramPayload prev = null;
 							for (DatagramPayload datagramPayload : datagramPayloads) {
-								if (prev != null && !datagramPayload.linked(prev)) {
-									LOG.warn("Broken datagram chain between " + datagramPayload + " and " + prev + ". Returning empty payload.");
-									packetData = new byte[0];
+								if (prev == null && datagramPayload.offset != 0) {
+									LOG.warn("Datagram chain not starting at 0. Probably received packets out-of-order. Can't reassemble this packet.");
 									break;
 								}
-								packetData = Bytes.concat(packetData, datagramPayload.payload);
-								totalLength += datagramPayload.payload.length;
+								if (prev != null && !datagramPayload.linked(prev)) {
+									LOG.warn("Broken datagram chain between " + datagramPayload + " and " + prev + ". Can't reassemble this packet.");
+									break;
+								}
+								reassmbledPacketData = Bytes.concat(reassmbledPacketData, datagramPayload.payload);
+								reassmbledTotalLength += datagramPayload.payload.length;
+								reassembledFragments++;
 								prev = datagramPayload;
+							}
+							if (reassembledFragments == datagramPayloads.size()) {
+								packetData = reassmbledPacketData;
+								totalLength = reassmbledTotalLength;
+								packet.put(Packet.REASSEMBLED_DATAGRAM_FRAGMENTS, reassembledFragments);
 							}
 						}
 					} else {
