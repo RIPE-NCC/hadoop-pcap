@@ -40,7 +40,7 @@ You can use the following parameters to combine multiple input files into splits
 	                             dns_authority array<string>,
 	                             dns_additional array<string>)
 	ROW FORMAT SERDE 'net.ripe.hadoop.pcap.serde.PcapDeserializer'
-	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.io.PcapInputFormat'
+	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.mr1.io.PcapInputFormat'
 	          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 	LOCATION 'hdfs:///pcaps/';
 
@@ -56,6 +56,6 @@ You can use the following parameters to combine multiple input files into splits
 	                             len int,
 	                             ttl int)
 	ROW FORMAT SERDE 'net.ripe.hadoop.pcap.serde.PcapDeserializer' 
-	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.io.PcapInputFormat' 
+	STORED AS INPUTFORMAT 'net.ripe.hadoop.pcap.mr1.io.PcapInputFormat' 
 	          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' 
 	LOCATION 's3n://pcaps/';
