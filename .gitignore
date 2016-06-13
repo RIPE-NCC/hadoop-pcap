@@ -3,6 +3,7 @@
 .classpath
 .settings
 .metadata/
-
+# Mac
+**/.DS_Store
 # Maven
 target
