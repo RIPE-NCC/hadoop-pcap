@@ -16,8 +16,9 @@ We would be happy to include your reader implementations in this library if you 
 
 Usage
 -----
-
-### Example: Count source ports
+## Example: Count source ports
+In this example, we show how to write a program that counts source ports of all packets in a pcap file.
+### Pcap.java 
 
 	public class Pcap extends Configured implements Tool {
 		public int run(String[] args) throws Exception {
@@ -51,6 +52,7 @@ Usage
 		}
 	}
 
+### PcapMapper.java
 
 	public class PcapMapper extends MapReduceBase implements Mapper<LongWritable, ObjectWritable, IntWritable, LongWritable> {
 		private final static LongWritable ONE = new LongWritable(1);
@@ -69,6 +71,7 @@ Usage
 		}
 	}
 
+### PcapReducer.java
 
 	public class PcapReducer extends MapReduceBase implements Reducer<IntWritable, LongWritable, IntWritable, LongWritable> {
 		public void reduce(IntWritable key, Iterator<LongWritable> values, OutputCollector<IntWritable, LongWritable> output, Reporter reporter) throws IOException {
