@@ -9,13 +9,7 @@ import java.util.List;
 import net.ripe.hadoop.pcap.packet.DnsPacket;
 import net.ripe.hadoop.pcap.packet.Packet;
 
-import org.xbill.DNS.Header;
-import org.xbill.DNS.Message;
-import org.xbill.DNS.Opcode;
-import org.xbill.DNS.Rcode;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.Section;
-import org.xbill.DNS.Flags;
+import org.xbill.DNS.*;
 
 public class DnsPcapReader extends PcapReader {
 	public static final int DNS_PORT = 53;
@@ -62,12 +56,17 @@ public class DnsPcapReader extends PcapReader {
 				Header header = msg.getHeader();
 				dnsPacket.put(DnsPacket.QUERYID, header.getID());
 				dnsPacket.put(DnsPacket.FLAGS, header.printFlags());
+                dnsPacket.put(DnsPacket.AA, header.getFlag(Flags.AA));
+                dnsPacket.put(DnsPacket.TC, header.getFlag(Flags.TC));
 				dnsPacket.put(DnsPacket.QR, header.getFlag(Flags.QR));
+                dnsPacket.put(DnsPacket.RD, header.getFlag(Flags.RD));
+                dnsPacket.put(DnsPacket.RA, header.getFlag(Flags.RA));
 				dnsPacket.put(DnsPacket.OPCODE, Opcode.string(header.getOpcode()));
 				dnsPacket.put(DnsPacket.RCODE, Rcode.string(header.getRcode()));
 				dnsPacket.put(DnsPacket.QUESTION, convertRecordToString(msg.getQuestion()));
 				dnsPacket.put(DnsPacket.QNAME, convertRecordOwnerToString(msg.getQuestion()));
-				dnsPacket.put(DnsPacket.QTYPE, convertRecordTypeToInt(msg.getQuestion()));
+				dnsPacket.put(DnsPacket.QTYPE, Type.string(msg.getQuestion().getType()));
+                dnsPacket.put(DnsPacket.QCLASS, DClass.string(msg.getQuestion().getDClass()));
 				dnsPacket.put(DnsPacket.ANSWER, convertRecordsToStrings(msg.getSectionArray(Section.ANSWER)));
 				dnsPacket.put(DnsPacket.AUTHORITY, convertRecordsToStrings(msg.getSectionArray(Section.AUTHORITY)));
 				dnsPacket.put(DnsPacket.ADDITIONAL, convertRecordsToStrings(msg.getSectionArray(Section.ADDITIONAL)));
@@ -92,12 +91,6 @@ public class DnsPcapReader extends PcapReader {
 		String ownerString = record.getName().toString();
 		ownerString = ownerString.toLowerCase();
 		return ownerString;
-	}
-
-	private int convertRecordTypeToInt(Record record) {
-		if (record == null)
-			return -1;
-		return record.getType();
 	}
 
 	private List<String> convertRecordsToStrings(Record[] records) {
