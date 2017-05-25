@@ -4,6 +4,11 @@
 	<artifactId>hadoop-pcap-root</artifactId>
 	<version>1.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
+        <properties>
+		<hadoopVersion>2.6.0</hadoopVersion>
+		<cdhVersion>5.10.0</cdhVersion>
+		<hiveVersion>1.1.0</hiveVersion>
+        </properties>
 
 	<modules>
 		<module>hadoop-pcap-lib</module>

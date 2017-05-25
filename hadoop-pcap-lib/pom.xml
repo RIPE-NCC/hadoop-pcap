@@ -35,13 +35,13 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-core</artifactId>
-			<version>2.6.0-mr1-cdh5.5.2</version>
+			<version>${hadoopVersion}-mr1-cdh${cdhVersion}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
-			<version>2.6.0-cdh5.5.2</version>
+			<version>${hadoopVersion}-cdh${cdhVersion}</version>
 			<scope>provided</scope>
 		</dependency>
 
