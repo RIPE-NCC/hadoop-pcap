@@ -49,7 +49,7 @@
 	<repositories>
 		<repository>
 			<id>cloudera-cdh-build</id>
-			<url>https://repository.cloudera.com/content/groups/cdh-build</url>
+			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
 		</repository>
 	</repositories>
 
