@@ -1,15 +1,13 @@
 package net.ripe.hadoop.pcap;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+import org.xbill.DNS.OPTRecord;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import net.ripe.hadoop.pcap.DnsPcapReader;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.xbill.DNS.OPTRecord;
+import static org.junit.Assert.assertEquals;
 
 public class DnsPcapReaderTest {
 	private DnsPcapReader pcapReader;
@@ -22,7 +20,7 @@ public class DnsPcapReaderTest {
 	@Test
 	public void normalizeOPTRecord() throws IOException {
 		OPTRecord record = new OPTRecord(4096, 0, 0, 32768);
-		assertEquals(". 32768 CLASS4096 OPT ; payload 4096, xrcode 0, version 0, flags 32768",
+		assertEquals(". OPT ; payload 4096, xrcode 0, version 0, flags 32768",
 		             pcapReader.normalizeRecordString(record.toString()));
 	}
 

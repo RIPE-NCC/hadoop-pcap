@@ -1,26 +1,24 @@
 package net.ripe.hadoop.pcap;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.math.BigDecimal;
-import java.math.MathContext;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.primitives.Bytes;
-
 import net.ripe.hadoop.pcap.packet.Datagram;
 import net.ripe.hadoop.pcap.packet.Flow;
 import net.ripe.hadoop.pcap.packet.Packet;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class PcapReader implements Iterable<Packet> {
 	public static final Log LOG = LogFactory.getLog(PcapReader.class);
@@ -610,7 +608,7 @@ public class PcapReader implements Iterable<Packet> {
 
 		@Override
 		public String toString() {
-			return Objects.toStringHelper(this.getClass()).add("seq", seq)
+			return MoreObjects.toStringHelper(this.getClass()).add("seq", seq)
 			                                              .add("len", payload.length)
 			                                              .toString();
 		}
@@ -642,7 +640,7 @@ public class PcapReader implements Iterable<Packet> {
 
 		@Override
 		public String toString() {
-			return Objects.toStringHelper(this.getClass()).add("offset", offset)
+			return MoreObjects.toStringHelper(this.getClass()).add("offset", offset)
 			                                              .add("len", payload.length)
 			                                              .toString();
 		}

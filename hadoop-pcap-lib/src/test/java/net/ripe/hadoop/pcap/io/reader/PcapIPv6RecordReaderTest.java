@@ -1,14 +1,6 @@
 package net.ripe.hadoop.pcap.io.reader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-
 import net.ripe.hadoop.pcap.PcapReader;
-import net.ripe.hadoop.pcap.io.reader.PcapRecordReader;
-
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -16,6 +8,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PcapIPv6RecordReaderTest {
 	private final File TEST_FILE = new File("src/test/resources/test-ipv6.pcap");

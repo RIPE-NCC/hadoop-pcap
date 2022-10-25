@@ -1,19 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>net.ripe.hadoop.pcap</groupId>
 	<artifactId>hadoop-pcap-serde</artifactId>
 	<parent>
 		<groupId>net.ripe.hadoop.pcap</groupId>
 		<artifactId>hadoop-pcap-root</artifactId>
 		<version>1.2-SNAPSHOT</version>
-		<relativePath>..</relativePath>
 	</parent>
 
 	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.1</version>
 				<configuration>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -33,34 +30,22 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>net.ripe.hadoop.pcap</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>hadoop-pcap-lib</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.apache.hive</groupId>
 		  <artifactId>hive-exec</artifactId>
-		  <version>1.1.0-cdh5.5.2</version>
-		  <scope>provided</scope>
 		</dependency>
 		<dependency>
 		  <groupId>org.apache.hive</groupId>
 		  <artifactId>hive-serde</artifactId>
-		  <version>1.1.0-cdh5.5.2</version>
-		  <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>2.6.0-mr1-cdh5.5.2</version>
-			<scope>provided</scope>
+			<artifactId>hadoop-client</artifactId>
 		</dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>2.6.0-cdh5.5.2</version>
-            <scope>provided</scope>
-        </dependency>
 
 	</dependencies>
 
