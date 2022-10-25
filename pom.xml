@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.ripe.hadoop.pcap</groupId>
 	<artifactId>hadoop-pcap-root</artifactId>
-	<version>1.2</version>
+	<version>1.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<modules>
@@ -101,7 +101,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/RIPE-NCC/hadoop-pcap.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/RIPE-NCC/hadoop-pcap.git</developerConnection>
-	  <tag>hadoop-pcap-root-1.2</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<distributionManagement>
