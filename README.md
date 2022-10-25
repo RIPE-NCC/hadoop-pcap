@@ -9,6 +9,8 @@ See: https://raw.github.com/RIPE-NCC/hadoop-pcap/master/LICENSE
 Repository
 ----------
 
+UPDATE: Since Bintray has been discontinued, the latest releases of hadoop-pcap are not available there, and you have to build them from source.
+
 	<repositories>
 	  <repository>
 	    <id>hadoop-pcap</id>
